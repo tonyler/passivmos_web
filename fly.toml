@@ -15,10 +15,10 @@ primary_region = "lax"
   processes = ["app"]
 
   [[http_service.checks]]
-    grace_period = "10s"
+    grace_period = "60s"
     interval = "30s"
     method = "GET"
-    timeout = "5s"
+    timeout = "10s"
     path = "/"
 
 [mounts]
