@@ -1,66 +1,66 @@
 {
   "ATOM": {
     "symbol": "ATOM",
-    "price": 3.175495359252153,
-    "apr": 17.03,
-    "apr_status": "ok",
-    "apr_source": "scraped",
-    "last_updated": "2025-10-23T11:08:22.712488+00:00"
+    "price": 3.1742686799986712,
+    "apr": 16.8,
+    "apr_status": "fallback",
+    "apr_source": "config_fallback",
+    "last_updated": "2025-10-23T11:19:00.504627+00:00"
   },
   "OSMO": {
     "symbol": "OSMO",
-    "price": 0.11670431824992153,
-    "apr": 8.5,
-    "apr_status": "ok",
-    "apr_source": "scraped",
-    "last_updated": "2025-10-23T11:08:22.712495+00:00"
+    "price": 0.11661661525636102,
+    "apr": 10.0,
+    "apr_status": "fallback",
+    "apr_source": "config_fallback",
+    "last_updated": "2025-10-23T11:19:00.504633+00:00"
   },
   "TIA": {
     "symbol": "TIA",
-    "price": 0.9883756710762736,
-    "apr": 12.32,
-    "apr_status": "ok",
-    "apr_source": "scraped",
-    "last_updated": "2025-10-23T11:08:22.712496+00:00"
+    "price": 0.9880459375966497,
+    "apr": 14.2,
+    "apr_status": "fallback",
+    "apr_source": "config_fallback",
+    "last_updated": "2025-10-23T11:19:00.504635+00:00"
   },
   "JUNO": {
     "symbol": "JUNO",
-    "price": 0.06896722218869772,
-    "apr": 23.43,
-    "apr_status": "ok",
-    "apr_source": "scraped",
-    "last_updated": "2025-10-23T11:08:22.712497+00:00"
+    "price": 0.06894871722341131,
+    "apr": 18.5,
+    "apr_status": "fallback",
+    "apr_source": "config_fallback",
+    "last_updated": "2025-10-23T11:19:00.504636+00:00"
   },
   "HUAHUA": {
     "symbol": "HUAHUA",
-    "price": 1.2687696473870959e-05,
-    "apr": 12.88,
-    "apr_status": "ok",
-    "apr_source": "scraped",
-    "last_updated": "2025-10-23T11:08:22.712499+00:00"
+    "price": 1.2795134207252982e-05,
+    "apr": 25.0,
+    "apr_status": "fallback",
+    "apr_source": "config_fallback",
+    "last_updated": "2025-10-23T11:19:00.504637+00:00"
   },
   "DYM": {
     "symbol": "DYM",
-    "price": 0.10726043901986339,
-    "apr": 5.69,
-    "apr_status": "ok",
-    "apr_source": "scraped",
-    "last_updated": "2025-10-23T11:08:22.712500+00:00"
+    "price": 0.1072603338891642,
+    "apr": 15.0,
+    "apr_status": "fallback",
+    "apr_source": "config_fallback",
+    "last_updated": "2025-10-23T11:19:00.504638+00:00"
   },
   "SAGA": {
     "symbol": "SAGA",
-    "price": 0.11150160508692329,
+    "price": 0.11148272860895765,
     "apr": 3.0,
     "apr_status": "ok",
     "apr_source": "config",
-    "last_updated": "2025-10-23T11:08:22.712501+00:00"
+    "last_updated": "2025-10-23T11:19:00.504639+00:00"
   },
   "NLS": {
     "symbol": "NLS",
-    "price": 0.008506647868987562,
-    "apr": 3.57,
-    "apr_status": "ok",
-    "apr_source": "scraped",
-    "last_updated": "2025-10-23T11:08:22.712502+00:00"
+    "price": 0.00850612513102714,
+    "apr": 15.0,
+    "apr_status": "fallback",
+    "apr_source": "config_fallback",
+    "last_updated": "2025-10-23T11:19:00.504640+00:00"
   }
 }
