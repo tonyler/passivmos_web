@@ -1,0 +1,164 @@
+{
+  "tokens": {
+    "ATOM": {
+      "enabled": true,
+      "name": "Cosmos Hub",
+      "symbol": "ATOM",
+      "chain_name": "cosmos",
+      "bech32_prefix": "cosmos",
+      "decimals": 6,
+      "rest_endpoints": [
+        "https://lcd-cosmoshub.keplr.app",
+        "https://rest.cosmos.directory/cosmoshub",
+        "https://cosmos-rest.staketab.org"
+      ],
+      "keplr_url": "https://wallet.keplr.app/chains/cosmos-hub",
+      "ibc_denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+      "fallback_apr": 16.8,
+      "color": "#2e3148",
+      "logo": "https://raw.githubusercontent.com/cosmos/chain-registry/master/cosmoshub/images/atom.png"
+    },
+    "OSMO": {
+      "enabled": true,
+      "name": "Osmosis",
+      "symbol": "OSMO",
+      "chain_name": "osmosis",
+      "bech32_prefix": "osmo",
+      "decimals": 6,
+      "rest_endpoints": [
+        "https://lcd-osmosis.keplr.app",
+        "https://rest.cosmos.directory/osmosis",
+        "https://osmosis-rest.staketab.org"
+      ],
+      "keplr_url": "https://wallet.keplr.app/chains/osmosis",
+      "ibc_denom": "uosmo",
+      "fallback_apr": 10.0,
+      "color": "#5e12a0",
+      "logo": "https://raw.githubusercontent.com/cosmos/chain-registry/master/osmosis/images/osmo.png"
+    },
+    "TIA": {
+      "enabled": true,
+      "name": "Celestia",
+      "symbol": "TIA",
+      "chain_name": "celestia",
+      "bech32_prefix": "celestia",
+      "decimals": 6,
+      "rest_endpoints": [
+        "https://rest.cosmos.directory/celestia",
+        "https://celestia-api.polkachu.com",
+        "https://api.celestia.nodestake.top"
+      ],
+      "keplr_url": "https://wallet.keplr.app/chains/celestia",
+      "ibc_denom": "ibc/D79E7D83AB399BFFF93433E54FAA480C191248FC556924A2A8351AE2638B3877",
+      "fallback_apr": 14.2,
+      "color": "#7b2bf9",
+      "logo": "https://raw.githubusercontent.com/cosmos/chain-registry/master/celestia/images/celestia.png"
+    },
+    "JUNO": {
+      "enabled": true,
+      "name": "Juno",
+      "symbol": "JUNO",
+      "chain_name": "juno",
+      "bech32_prefix": "juno",
+      "decimals": 6,
+      "rest_endpoints": [
+        "https://lcd-juno.keplr.app",
+        "https://rest.cosmos.directory/juno"
+      ],
+      "keplr_url": "https://wallet.keplr.app/chains/juno",
+      "ibc_denom": "ibc/46B44899322F3CD854D2D46DEEF881958467CDD4B3B10086DA49296BBED94BED",
+      "fallback_apr": 18.5,
+      "color": "#f0827d",
+      "logo": "https://raw.githubusercontent.com/cosmos/chain-registry/master/juno/images/juno.png"
+    },
+    "HUAHUA": {
+      "enabled": true,
+      "name": "Chihuahua",
+      "symbol": "HUAHUA",
+      "chain_name": "chihuahua",
+      "bech32_prefix": "chihuahua",
+      "decimals": 6,
+      "rest_endpoints": [
+        "https://api.chihuahua.wtf",
+        "https://chihuahua-rest.staketab.org"
+      ],
+      "keplr_url": "https://wallet.keplr.app/chains/chihuahua",
+      "ibc_denom": "ibc/B9E0A1A524E98BB407D3CED8720EFEFD186002F90C1B1B7964811DD0CCC12228",
+      "fallback_apr": 25.0,
+      "color": "#343434",
+      "logo": "https://raw.githubusercontent.com/cosmos/chain-registry/master/chihuahua/images/huahua.png"
+    },
+    "DYM": {
+      "enabled": true,
+      "name": "Dymension",
+      "symbol": "DYM",
+      "chain_name": "dymension",
+      "bech32_prefix": "dym",
+      "decimals": 18,
+      "rest_endpoints": [
+        "https://dymension-rest.staketab.org",
+        "https://api.dym.nodestake.top"
+      ],
+      "keplr_url": "https://wallet.keplr.app/chains/dymension",
+      "ibc_denom": "ibc/9A76CDF0CBCEF37923F32518FA15E5DC92B9F56128292BC4D63C4AEA76CBB110",
+      "fallback_apr": 15.0,
+      "color": "#f5f5f5",
+      "logo": "https://raw.githubusercontent.com/cosmos/chain-registry/master/dymension/images/dymension-logo.png"
+    },
+    "SAGA": {
+      "enabled": true,
+      "name": "Saga",
+      "symbol": "SAGA",
+      "chain_name": "saga",
+      "bech32_prefix": "saga",
+      "decimals": 6,
+      "rest_endpoints": [
+        "https://rest.cosmos.directory/saga",
+        "https://saga-api.polkachu.com",
+        "https://saga-rest.staketab.org"
+      ],
+      "keplr_url": null,
+      "skip_apr_scraping": true,
+      "ibc_denom": "ibc/094FB70C3006906F67F5D674073D2DAFAFB41537E7033098F5C752F211E7B6C2",
+      "fallback_apr": 3.0,
+      "color": "#000000",
+      "logo": "https://raw.githubusercontent.com/cosmos/chain-registry/master/saga/images/saga.png"
+    },
+    "NLS": {
+      "enabled": true,
+      "name": "Nolus",
+      "symbol": "NLS",
+      "chain_name": "nolus",
+      "bech32_prefix": "nolus",
+      "decimals": 6,
+      "rest_endpoints": [
+        "https://rest.cosmos.directory/nolus",
+        "https://nolus-api.polkachu.com",
+        "https://nolus-rest.publicnode.com"
+      ],
+      "keplr_url": "https://wallet.keplr.app/chains/nolus",
+      "ibc_denom": "ibc/D9AFCECDD361D38302AA66EB3BAC23B95234832C51D12489DC451FA2B7C72782",
+      "fallback_apr": 15.0,
+      "color": "#05120f",
+      "logo": "https://raw.githubusercontent.com/cosmos/chain-registry/master/nolus/images/nolus.png"
+    }
+  },
+  "settings": {
+    "scraping": {
+      "enabled": true,
+      "cache_duration_seconds": 3600,
+      "browser_timeout_ms": 30000,
+      "max_retries": 3,
+      "concurrent_limit": 2
+    },
+    "price_api": {
+      "enabled": true,
+      "base_url": "https://osmosis.numia.xyz",
+      "timeout_seconds": 30
+    },
+    "wallet_analysis": {
+      "enabled": true,
+      "max_concurrent_addresses": 5
+    }
+  }
+}

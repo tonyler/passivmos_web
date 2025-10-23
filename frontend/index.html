@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PassivMOS - Portfolio Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #f5f5f5;
+            color: #333;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border: 2px solid #333;
+            padding: 20px;
+        }
+
+        h1, h2, h3 {
+            font-weight: normal;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+        }
+
+        h1 { font-size: 24px; }
+        h2 { font-size: 20px; }
+        h3 { font-size: 16px; }
+
+        input, textarea, button {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            padding: 8px;
+            border: 1px solid #333;
+            background: white;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        button {
+            cursor: pointer;
+            background: #333;
+            color: white;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #555;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .info-box {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+
+        .terminal {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        .terminal-line {
+            margin: 2px 0;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            border: 1px solid #333;
+            padding: 10px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+
+        th, td {
+            border: 1px solid #333;
+            padding: 8px;
+            text-align: left;
+            font-size: 12px;
+        }
+
+        th {
+            background: #f0f0f0;
+            font-weight: bold;
+        }
+
+        .button-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #333;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login Screen -->
+        <div id="loginScreen">
+            <h1>PassivMOS - Portfolio Tracker</h1>
+            <div class="section">
+                <h2>Enter Your Code</h2>
+                <input type="text" id="codeInput" placeholder="Your access code (e.g., tonymeow)" onkeypress="if(event.key === 'Enter') login()">
+                <button onclick="login()">Continue</button>
+                <button onclick="showStats()" style="background: #555; margin-top: 5px;">View Current Prices & APRs</button>
+                <p style="font-size: 12px; color: #666; margin-top: 10px;">New? Just enter any code to create your account.</p>
+            </div>
+        </div>
+
+        <!-- Stats Modal -->
+        <div id="statsModal" class="hidden">
+            <div class="section">
+                <div class="header-row">
+                    <h2>Current Token Prices & APRs</h2>
+                    <button onclick="hideStats()" style="width: auto; padding: 8px 20px;">Close</button>
+                </div>
+
+                <div class="info-box">
+                    <strong>Data Source:</strong> <span id="statsMessage">Loading...</span>
+                    <br><strong>Last Updated:</strong> <span id="statsLastUpdated">-</span>
+                    <br><strong style="margin-top: 5px; display: inline-block;">If something is wrong:</strong> <a href="https://t.me/tonyler" target="_blank" style="color: #0066cc; text-decoration: underline;">Contact @tonyler on Telegram</a>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Token</th>
+                            <th>Price (USD)</th>
+                            <th>APR (%)</th>
+                            <th>Last Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody id="statsTableBody">
+                        <tr><td colspan="4" style="text-align: center;">Loading...</td></tr>
+                    </tbody>
+                </table>
+
+                <button onclick="hideStats(); showElement('loginScreen');" style="margin-top: 10px;">Back to Login</button>
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="dashboard" class="hidden">
+            <!-- Header -->
+            <div class="header-row">
+                <h1>PassivMOS - Portfolio Tracker</h1>
+                <button onclick="logout()" style="width: auto; padding: 8px 20px;">Logout</button>
+            </div>
+
+            <div style="margin-bottom: 20px; padding: 10px; border: 1px solid #333;">
+                <strong>Logged in as:</strong> <span id="displayCode"></span>
+            </div>
+
+            <!-- Address Editor -->
+            <div class="section">
+                <h2>Your Wallet Addresses</h2>
+                <div class="info-box">
+                    TIP: Add one address per line. System checks all chains automatically via bech32 conversion.
+                    <br>Supports: cosmos1, osmo1, celestia1, juno1, chihuahua1, dym1, saga1, nolus1
+                </div>
+                <textarea id="addressesTextarea" rows="8" placeholder="cosmos1abc123...&#10;osmo1xyz456..."></textarea>
+                <div class="button-row">
+                    <button onclick="saveAddresses()">Save Addresses</button>
+                    <button onclick="calculatePortfolio()">Calculate Income</button>
+                </div>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="loadingIndicator" class="hidden section">
+                <h2><span class="spinner"></span> Analyzing Wallets...</h2>
+                <p>Real-time progress from blockchain APIs + Numia price data</p>
+                <div class="terminal" id="terminalLog"></div>
+            </div>
+
+            <!-- Portfolio Summary -->
+            <div id="portfolioSummary" class="hidden">
+                <div class="section">
+                    <h2>Portfolio Summary</h2>
+                    <div class="stat-grid">
+                        <div class="stat-box">
+                            <div class="stat-label">Total Value</div>
+                            <div class="stat-value" id="totalValue">$0.00</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Daily Earnings</div>
+                            <div class="stat-value" id="dailyEarnings">$0.00</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Monthly Earnings</div>
+                            <div class="stat-value" id="monthlyEarnings">$0.00</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Yearly Earnings</div>
+                            <div class="stat-value" id="yearlyEarnings">$0.00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Token Breakdown -->
+                <div class="section">
+                    <h3>Token Breakdown</h3>
+                    <table id="tokenBreakdownTable">
+                        <thead>
+                            <tr>
+                                <th>Token</th>
+                                <th>Balance</th>
+                                <th>APR</th>
+                                <th>Value (USD)</th>
+                                <th>Yearly Income</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tokenBreakdown"></tbody>
+                    </table>
+                </div>
+
+                <!-- Wallet Details -->
+                <div class="section">
+                    <h3>Wallet Details</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Address</th>
+                                <th>Chain</th>
+                                <th>Balance</th>
+                                <th>Staked</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody id="walletDetails"></tbody>
+                    </table>
+                    <p style="font-size: 11px; color: #666; margin-top: 10px;">
+                        Last updated: <span id="lastUpdated"></span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
