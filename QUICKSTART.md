@@ -4,7 +4,7 @@ This guide will help you set up PassivMOS with a free domain in just a few minut
 
 ## What You Get
 
-- **Free Domain**: `tonyler.runs.gg`
+- **Free Domain**: `tonyler.is-not-a.dev`
 - **Server IP**: `2a01:4f9:c012:b061::1` (IPv6)
 - **Public Access**: Your app accessible from anywhere!
 
@@ -77,7 +77,7 @@ This script will:
 
 This script will automatically:
 - Fork the open-domains/register repository
-- Create domain configuration for `tonyler.runs.gg`
+- Create domain configuration for `tonyler.is-not-a.dev`
 - Submit a pull request
 - Give you a link to track approval
 
@@ -127,7 +127,7 @@ sudo nano /etc/nginx/sites-available/passivmos
 server {
     listen 80;
     listen [::]:80;
-    server_name tonyler.runs.gg;
+    server_name tonyler.is-not-a.dev;
 
     location / {
         proxy_pass http://localhost:8000;
@@ -175,8 +175,8 @@ After=network.target
 [Service]
 Type=simple
 User=root
-WorkingDirectory=/root/flyfix/github/passivmos_web
-ExecStart=/usr/bin/python3 /root/flyfix/github/passivmos_web/backend/main.py
+WorkingDirectory=/root/flyfix
+ExecStart=/usr/bin/python3 /root/flyfix/backend/main.py
 Restart=always
 RestartSec=10
 Environment="PATH=/usr/bin:/usr/local/bin"
@@ -203,7 +203,7 @@ sudo journalctl -u passivmos -f
 ## 🎉 Done!
 
 Once domain is approved and nginx is configured, your app will be live at:
-**http://tonyler.runs.gg**
+**http://tonyler.is-not-a.dev**
 
 ---
 
@@ -222,8 +222,8 @@ sudo nginx -t
 
 ### Check domain resolution (after approval):
 ```bash
-dig tonyler.runs.gg
-ping6 tonyler.runs.gg
+dig tonyler.is-not-a.dev
+ping6 tonyler.is-not-a.dev
 ```
 
 ### View app logs:

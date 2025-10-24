@@ -3,8 +3,6 @@
 const API_URL = '/api';
 let currentCode = '';
 
-// === UTILITY FUNCTIONS ===
-
 function showElement(id) {
     document.getElementById(id).classList.remove('hidden');
 }
@@ -67,8 +65,6 @@ function formatNumber(value, decimals = 2) {
     }).format(value);
 }
 
-// === API FUNCTIONS ===
-
 async function apiRequest(endpoint, method = 'GET', body = null) {
     const options = {
         method,
@@ -95,8 +91,6 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
         throw error;
     }
 }
-
-// === AUTH FUNCTIONS ===
 
 async function login() {
     const code = document.getElementById('codeInput').value.trim();
@@ -137,8 +131,6 @@ function logout() {
     showElement('loginScreen');
 }
 
-// === ADDRESS MANAGEMENT ===
-
 async function saveAddresses() {
     const textarea = document.getElementById('addressesTextarea');
     const addresses = textarea.value
@@ -168,8 +160,6 @@ async function saveAddresses() {
         textarea.style.borderColor = 'red';
     }
 }
-
-// === PORTFOLIO CALCULATION ===
 
 async function calculatePortfolio() {
     const textarea = document.getElementById('addressesTextarea');
@@ -311,8 +301,6 @@ function renderWalletDetails(wallets) {
     });
 }
 
-// === STATS DISPLAY ===
-
 async function showStats() {
     hideElement('loginScreen');
     showElement('statsModal');
@@ -320,18 +308,12 @@ async function showStats() {
     try {
         const stats = await apiRequest('/stats', 'GET');
 
-        // Update message and timestamp
-        document.getElementById('statsMessage').textContent = stats.message || 'Numia API (Osmosis DEX)';
-        document.getElementById('statsLastUpdated').textContent = stats.last_check
-            ? new Date(stats.last_check).toLocaleString()
-            : '-';
-
         // Render table
         const tbody = document.getElementById('statsTableBody');
         tbody.innerHTML = '';
 
         if (!stats.available || stats.tokens.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #cc0000;">No data available. Please contact @tonyler on Telegram.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #cc0000;">No data available</td></tr>';
             return;
         }
 
@@ -378,8 +360,6 @@ async function showStats() {
 function hideStats() {
     hideElement('statsModal');
 }
-
-// === INITIALIZATION ===
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('PassivMOS Webapp loaded');

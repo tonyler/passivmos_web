@@ -210,96 +210,78 @@ class NumiaAPIClient:
     async def get_all_aprs(self, symbols: List[str], use_scraper: bool = True) -> Dict[str, Dict]:
         """
         Get APRs for all supported tokens
-        Uses web scraping from Keplr wallet or fallback to config values
+        Uses Keplr scraping with multi-tier caching fallback
 
         Args:
             symbols: List of token symbols
-            use_scraper: If True, scrape APRs from Keplr wallet (default True)
+            use_scraper: If True, scrape APRs from Keplr (default True)
 
         Returns:
             Dict mapping symbol to APR data with format:
             {
-                'ATOM': {'apr': 16.8, 'status': 'ok'/'error', 'source': 'scraped'/'fallback'}
+                'ATOM': {'apr': 16.8, 'status': 'ok'/'fallback', 'source': 'keplr/cached/config'}
             }
         """
         aprs = {}
 
-        # Try web scraping if enabled
         if use_scraper:
             try:
                 from apr_scraper import APRScraper
-                from config_loader import config
 
-                # Filter out tokens that should skip scraping
-                symbols_to_scrape = []
-                for symbol in symbols:
-                    token_config = config.get_token_config(symbol)
-                    if token_config and not token_config.get('skip_apr_scraping', False):
-                        symbols_to_scrape.append(symbol)
-                    else:
-                        logger.info(f"  {symbol}: Skipping APR scraping (hardcoded)")
+                logger.info(f"Fetching APRs for {len(symbols)} tokens...")
 
-                if symbols_to_scrape:
-                    logger.info(f"Scraping APRs from Keplr wallet for {len(symbols_to_scrape)} tokens...")
-                    async with APRScraper() as scraper:
-                        scraped_aprs = await scraper.get_multiple_aprs(symbols_to_scrape)
-                else:
-                    scraped_aprs = {}
+                async with APRScraper() as scraper:
+                    # This NEVER fails - always returns values (fresh/stale/fallback)
+                    scraped_aprs = await scraper.get_multiple_aprs(symbols)
 
+                # Convert to expected format
                 for symbol, apr_value in scraped_aprs.items():
-                        if apr_value is not None and apr_value > 0:
-                            aprs[symbol] = {
-                                'apr': apr_value,
-                                'status': 'ok',
-                                'source': 'scraped'
-                            }
-                            logger.info(f"  {symbol}: {apr_value}% APR (scraped from Keplr)")
-                        else:
-                            # Scraping returned None or 0 - mark as error
-                            aprs[symbol] = {
-                                'apr': 0,
-                                'status': 'error',
-                                'source': 'scraping_failed'
-                            }
-                            logger.warning(f"  {symbol}: APR scraping failed")
+                    symbol_upper = symbol.upper()
+
+                    # Check if this token has skip_apr_scraping enabled
+                    token_config = self.apr_config.get(symbol_upper, {})
+                    skip_scraping = config.get_token_config(symbol_upper).get('skip_apr_scraping', False) if config.get_token_config(symbol_upper) else False
+
+                    if apr_value == 0 and not skip_scraping:
+                        # Scraping failed, no cache available, and NOT a skip_scraping token
+                        aprs[symbol_upper] = {
+                            'apr': 0.0,
+                            'status': 'error',
+                            'source': 'unavailable'
+                        }
+                    elif apr_value == 0 and skip_scraping:
+                        # This token skips scraping, use config fallback
+                        fallback_apr = token_config.get('fallback_apr', 10.0)
+                        aprs[symbol_upper] = {
+                            'apr': fallback_apr,
+                            'status': 'ok',
+                            'source': 'config'
+                        }
+                    else:
+                        # Scraped or cached value
+                        aprs[symbol_upper] = {
+                            'apr': apr_value,
+                            'status': 'ok',
+                            'source': 'keplr'
+                        }
 
             except Exception as e:
-                logger.warning(f"APR scraping failed: {e}, falling back to config values")
+                logger.error(f"APR scraper failed: {e}, using config fallbacks")
+                # Fall through to config-only mode
 
-        # For tokens not scraped or if scraping disabled, use config values
-        for symbol in symbols:
-            symbol_upper = symbol.upper()
+        # Fallback: If scraper disabled or failed catastrophically, return 0
+        if not use_scraper or not aprs:
+            logger.error("APR scraper disabled or failed, returning 0 for all tokens")
+            for symbol in symbols:
+                symbol_upper = symbol.upper()
 
-            # Skip if already scraped successfully
-            if symbol_upper in aprs and aprs[symbol_upper]['status'] == 'ok':
-                continue
+                if symbol_upper in aprs:
+                    continue
 
-            # Get from config
-            token_config = self.apr_config.get(symbol_upper, {})
-            fallback_apr = token_config.get('fallback_apr')
-
-            if fallback_apr is not None:
-                # Use fallback if scraping failed or wasn't attempted
-                if symbol_upper in aprs and aprs[symbol_upper]['status'] == 'error':
-                    aprs[symbol_upper] = {
-                        'apr': fallback_apr,
-                        'status': 'fallback',
-                        'source': 'config_fallback'
-                    }
-                    logger.info(f"  {symbol_upper}: {fallback_apr}% APR (fallback due to scraping failure)")
-                else:
-                    aprs[symbol_upper] = {
-                        'apr': fallback_apr,
-                        'status': 'ok',
-                        'source': 'config'
-                    }
-                    logger.info(f"  {symbol_upper}: {fallback_apr}% APR (from config)")
-            else:
-                logger.warning(f"  {symbol_upper}: No APR configured")
                 aprs[symbol_upper] = {
-                    'apr': 0,
+                    'apr': 0.0,
                     'status': 'error',
-                    'source': 'missing_config'
+                    'source': 'scraper_disabled'
                 }
 
         return aprs

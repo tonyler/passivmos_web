@@ -12,7 +12,7 @@ echo ""
 # Configuration
 GITHUB_USER="tonyler"
 EMAIL="tonyler@pm.me"
-DOMAIN="tonyler.runs.gg"
+DOMAIN="tonyler.is-not-a.dev"
 SERVER_IP="2a01:4f9:c012:b061::1"  # IPv6 address
 REPO_URL="https://github.com/tonyler/passivmos_web"
 

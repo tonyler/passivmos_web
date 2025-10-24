@@ -5,17 +5,20 @@ FastAPI server for portfolio tracking
 """
 import asyncio
 import logging
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+import re
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from typing import List, Optional, Dict
 from pathlib import Path
 import json
 from datetime import datetime
 import hashlib
-import asyncio
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 # Import our modules
 from wallet_analyzer import WalletAddressAnalyzer, WalletAnalysis
@@ -30,6 +33,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Initialize rate limiter
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["100/hour"],  # Global default
+    storage_uri="memory://"
+)
+
 # Initialize FastAPI
 app = FastAPI(
     title="PassivMOS Webapp",
@@ -37,10 +47,14 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS middleware
+# Add rate limiter to app state
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# CORS middleware - Restrict to specific origins in production
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # TODO: Replace with specific domains in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -57,7 +71,52 @@ SESSIONS_DIR.mkdir(exist_ok=True)
 # Global scraper instance
 price_scraper = PriceAPRScraper(cache_dir=str(Path(__file__).parent.parent / "data" / "cache"))
 
-# === PYDANTIC MODELS ===
+# Constants
+MAX_ADDRESSES_PER_USER = 50
+VALID_ADDRESS_PREFIXES = ['cosmos', 'osmo', 'celestia', 'juno', 'chihuahua', 'dym', 'saga', 'nolus']
+
+# Input Validation Helpers
+def validate_user_code(code: str) -> bool:
+    """Validate user code format"""
+    if not code or len(code) < 3 or len(code) > 50:
+        return False
+    # Only alphanumeric and underscores
+    if not re.match(r'^[a-zA-Z0-9_]+$', code):
+        return False
+    return True
+
+def validate_wallet_address(address: str) -> bool:
+    """Validate wallet address format"""
+    if not address or len(address) < 39 or len(address) > 90:
+        return False
+    # Only lowercase alphanumeric (bech32)
+    if not re.match(r'^[a-z0-9]+$', address):
+        return False
+    # Check if starts with valid prefix
+    has_valid_prefix = any(address.startswith(prefix) for prefix in VALID_ADDRESS_PREFIXES)
+    if not has_valid_prefix:
+        return False
+    return True
+
+def sanitize_addresses(addresses: List[str]) -> tuple[List[str], List[str]]:
+    """
+    Sanitize and validate addresses
+    Returns: (valid_addresses, invalid_addresses)
+    """
+    valid = []
+    invalid = []
+
+    for addr in addresses:
+        cleaned = addr.strip()
+        if not cleaned:
+            continue
+
+        if validate_wallet_address(cleaned):
+            valid.append(cleaned)
+        else:
+            invalid.append(cleaned)
+
+    return valid, invalid
 
 class UserSession(BaseModel):
     """User session model"""
@@ -70,14 +129,38 @@ class RegisterRequest(BaseModel):
     """User registration request"""
     code: str
 
+    @validator('code')
+    def validate_code(cls, v):
+        if not validate_user_code(v):
+            raise ValueError('Invalid code format. Use 3-50 alphanumeric characters or underscores.')
+        return v
+
 class SaveAddressesRequest(BaseModel):
     """Save addresses request"""
     code: str
     addresses: List[str]
 
+    @validator('code')
+    def validate_code(cls, v):
+        if not validate_user_code(v):
+            raise ValueError('Invalid code format.')
+        return v
+
+    @validator('addresses')
+    def validate_addresses_count(cls, v):
+        if len(v) > MAX_ADDRESSES_PER_USER:
+            raise ValueError(f'Maximum {MAX_ADDRESSES_PER_USER} addresses allowed.')
+        return v
+
 class CalculateRequest(BaseModel):
     """Calculate portfolio request"""
     code: str
+
+    @validator('code')
+    def validate_code(cls, v):
+        if not validate_user_code(v):
+            raise ValueError('Invalid code format.')
+        return v
 
 class PortfolioResponse(BaseModel):
     """Portfolio calculation response"""
@@ -90,11 +173,8 @@ class PortfolioResponse(BaseModel):
     token_breakdown: Dict[str, Dict]
     last_updated: str
 
-# === HELPER FUNCTIONS ===
-
 def get_session_file(code: str) -> Path:
     """Get session file path for a user code"""
-    # Hash the code for security
     code_hash = hashlib.sha256(code.encode()).hexdigest()[:16]
     return SESSIONS_DIR / f"{code_hash}.json"
 
@@ -113,17 +193,19 @@ def load_session(code: str) -> Optional[UserSession]:
         return None
 
 def save_session(session: UserSession):
-    """Save user session to file"""
+    """Save user session to file (atomic write)"""
     session_file = get_session_file(session.code)
+    temp_file = session_file.with_suffix('.tmp')
     try:
-        with open(session_file, 'w') as f:
+        with open(temp_file, 'w') as f:
             json.dump(session.dict(), f, indent=2)
+        temp_file.rename(session_file)
         logger.info(f"Session saved for code: {session.code}")
     except Exception as e:
+        if temp_file.exists():
+            temp_file.unlink()
         logger.error(f"Error saving session: {e}")
         raise HTTPException(status_code=500, detail="Failed to save session")
-
-# === API ENDPOINTS ===
 
 @app.get("/")
 async def root():
@@ -131,13 +213,13 @@ async def root():
     return FileResponse(frontend_dir / "index.html")
 
 @app.post("/api/register")
-async def register(request: RegisterRequest):
+@limiter.limit("10/minute")
+async def register(req: RegisterRequest, request: Request):
     """Register or login with a user code"""
-    if not request.code or len(request.code) < 3:
-        raise HTTPException(status_code=400, detail="Code must be at least 3 characters")
+    request_data = req  # Rename for clarity
 
     # Check if session exists
-    existing_session = load_session(request.code)
+    existing_session = load_session(request_data.code)
 
     if existing_session:
         return {
@@ -149,7 +231,7 @@ async def register(request: RegisterRequest):
         # Create new session
         now = datetime.now().isoformat()
         new_session = UserSession(
-            code=request.code,
+            code=request_data.code,
             addresses=[],
             created_at=now,
             last_updated=now
@@ -163,24 +245,33 @@ async def register(request: RegisterRequest):
         }
 
 @app.post("/api/addresses/save")
-async def save_addresses(request: SaveAddressesRequest):
+@limiter.limit("15/minute")
+async def save_addresses(req: SaveAddressesRequest, request: Request):
     """Save wallet addresses for a user"""
-    session = load_session(request.code)
+    request_data = req
+    session = load_session(request_data.code)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found. Please register first.")
 
-    # Clean addresses (remove empty lines)
-    cleaned_addresses = [addr.strip() for addr in request.addresses if addr.strip()]
+    # Validate and sanitize addresses
+    valid_addresses, invalid_addresses = sanitize_addresses(request_data.addresses)
 
-    # Update session
-    session.addresses = cleaned_addresses
+    # Update session with only valid addresses
+    session.addresses = valid_addresses
     session.last_updated = datetime.now().isoformat()
     save_session(session)
 
-    return {
+    response = {
         "message": "Addresses saved successfully",
-        "count": len(cleaned_addresses)
+        "count": len(valid_addresses)
     }
+
+    # Add warning if some addresses were invalid
+    if invalid_addresses:
+        response["warning"] = f"{len(invalid_addresses)} invalid address(es) skipped"
+        response["invalid_addresses"] = invalid_addresses[:5]  # Show first 5
+
+    return response
 
 @app.get("/api/addresses/{code}")
 async def get_addresses(code: str):
@@ -366,8 +457,13 @@ async def calculate_portfolio_generator(code: str):
 
 
 @app.get("/api/calculate/stream/{code}")
-async def calculate_portfolio_stream(code: str):
+@limiter.limit("5/minute")
+async def calculate_portfolio_stream(code: str, request: Request):
     """Stream portfolio calculation progress via Server-Sent Events"""
+    # Validate code
+    if not validate_user_code(code):
+        raise HTTPException(status_code=400, detail="Invalid code format")
+
     return StreamingResponse(
         calculate_portfolio_generator(code),
         media_type="text/event-stream",
@@ -379,12 +475,27 @@ async def calculate_portfolio_stream(code: str):
 
 
 @app.post("/api/calculate")
-async def calculate_portfolio(request: CalculateRequest):
+@limiter.limit("5/minute")
+async def calculate_portfolio(req: CalculateRequest, request: Request):
     """Calculate portfolio for a user's addresses (non-streaming version for compatibility)"""
-    logger.info(f"Calculating portfolio for code: {request.code}")
+    request_data = req
+    logger.info(f"Calculating portfolio for code: {request_data.code}")
+
+    # Apply timeout protection
+    try:
+        return await asyncio.wait_for(
+            _calculate_portfolio_internal(request_data.code),
+            timeout=60.0  # 60 second timeout
+        )
+    except asyncio.TimeoutError:
+        logger.error(f"Calculation timeout for code: {request_data.code}")
+        raise HTTPException(status_code=504, detail="Calculation timeout. Please try with fewer addresses.")
+
+async def _calculate_portfolio_internal(code: str):
+    """Internal calculation logic with timeout"""
 
     # Load session
-    session = load_session(request.code)
+    session = load_session(code)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -552,8 +663,6 @@ async def get_stats():
         "last_check": datetime.now().isoformat()
     }
 
-# === BACKGROUND TASKS ===
-
 async def background_price_collector():
     """Background task to collect prices and APRs every 5 minutes"""
     while True:
@@ -566,8 +675,6 @@ async def background_price_collector():
 
         # Wait 5 minutes
         await asyncio.sleep(300)
-
-# === STARTUP/SHUTDOWN ===
 
 @app.on_event("startup")
 async def startup_event():

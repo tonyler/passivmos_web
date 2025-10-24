@@ -1,0 +1,373 @@
+#!/bin/bash
+
+# PassivMOS Management Script
+# Easy management of your PassivMOS webapp
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SERVICE_NAME="passivmos"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Helper functions
+print_success() {
+    echo -e "${GREEN}✅ $1${NC}"
+}
+
+print_error() {
+    echo -e "${RED}❌ $1${NC}"
+}
+
+print_info() {
+    echo -e "${BLUE}ℹ️  $1${NC}"
+}
+
+print_warning() {
+    echo -e "${YELLOW}⚠️  $1${NC}"
+}
+
+print_header() {
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${BLUE}  $1${NC}"
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+}
+
+# Show usage
+show_usage() {
+    cat << EOF
+${BLUE}PassivMOS Management Script${NC}
+
+Usage: ./passivmos [command]
+
+${GREEN}Service Management:${NC}
+  start           Start the PassivMOS service
+  stop            Stop the PassivMOS service
+  restart         Restart the PassivMOS service
+  status          Show service status
+
+${GREEN}Monitoring:${NC}
+  logs            View live logs (Ctrl+C to exit)
+  logs-tail       View last 50 log lines
+  health          Check application health
+
+${GREEN}Information:${NC}
+  info            Show all service information
+  url             Show access URLs
+
+${GREEN}Advanced:${NC}
+  reload-nginx    Reload nginx configuration
+  install         Install/update systemd service
+  uninstall       Remove systemd service
+
+${GREEN}Examples:${NC}
+  ./passivmos start          # Start the service
+  ./passivmos logs           # Watch live logs
+  ./passivmos health         # Check if app is healthy
+
+EOF
+}
+
+# Start service
+start_service() {
+    print_header "Starting PassivMOS"
+    sudo systemctl start $SERVICE_NAME
+    sleep 2
+    if sudo systemctl is-active --quiet $SERVICE_NAME; then
+        print_success "PassivMOS started successfully"
+        show_status
+    else
+        print_error "Failed to start PassivMOS"
+        print_info "Check logs with: ./passivmos logs"
+        exit 1
+    fi
+}
+
+# Stop service
+stop_service() {
+    print_header "Stopping PassivMOS"
+    sudo systemctl stop $SERVICE_NAME
+    print_success "PassivMOS stopped"
+}
+
+# Restart service
+restart_service() {
+    print_header "Restarting PassivMOS"
+    sudo systemctl restart $SERVICE_NAME
+    sleep 2
+    if sudo systemctl is-active --quiet $SERVICE_NAME; then
+        print_success "PassivMOS restarted successfully"
+        show_status
+    else
+        print_error "Failed to restart PassivMOS"
+        print_info "Check logs with: ./passivmos logs"
+        exit 1
+    fi
+}
+
+# Show status
+show_status() {
+    print_header "Service Status"
+    sudo systemctl status $SERVICE_NAME --no-pager -l || true
+}
+
+# View logs
+view_logs() {
+    print_header "Live Logs (Ctrl+C to exit)"
+    sudo journalctl -u $SERVICE_NAME -f
+}
+
+# View tail logs
+view_logs_tail() {
+    print_header "Last 50 Log Lines"
+    sudo journalctl -u $SERVICE_NAME -n 50 --no-pager
+}
+
+# Health check
+check_health() {
+    print_header "Health Check"
+
+    # Check if service is running
+    if sudo systemctl is-active --quiet $SERVICE_NAME; then
+        print_success "Service is running"
+    else
+        print_error "Service is not running"
+        exit 1
+    fi
+
+    # Check application health endpoint
+    echo ""
+    print_info "Testing application endpoint..."
+    HEALTH_RESPONSE=$(curl -s http://localhost:8000/api/health 2>&1)
+
+    if echo "$HEALTH_RESPONSE" | grep -q "healthy"; then
+        print_success "Application is healthy"
+        echo ""
+        echo "$HEALTH_RESPONSE" | python3 -m json.tool 2>/dev/null || echo "$HEALTH_RESPONSE"
+    else
+        print_error "Application health check failed"
+        echo "$HEALTH_RESPONSE"
+        exit 1
+    fi
+
+    # Check nginx
+    echo ""
+    print_info "Testing nginx proxy..."
+    NGINX_RESPONSE=$(curl -s http://localhost/api/health 2>&1)
+
+    if echo "$NGINX_RESPONSE" | grep -q "healthy"; then
+        print_success "Nginx proxy is working"
+    else
+        print_warning "Nginx proxy may have issues"
+    fi
+}
+
+# Show all info
+show_info() {
+    print_header "PassivMOS Information"
+
+    # Service status
+    echo ""
+    echo -e "${GREEN}Service Status:${NC}"
+    if sudo systemctl is-active --quiet $SERVICE_NAME; then
+        echo -e "  Status: ${GREEN}Running ✅${NC}"
+    else
+        echo -e "  Status: ${RED}Stopped ❌${NC}"
+    fi
+
+    echo -e "  Enabled: $(sudo systemctl is-enabled $SERVICE_NAME 2>/dev/null || echo 'unknown')"
+    echo -e "  Uptime: $(sudo systemctl show $SERVICE_NAME --property=ActiveEnterTimestamp --value | cut -d' ' -f2-)"
+
+    # URLs
+    echo ""
+    echo -e "${GREEN}Access URLs:${NC}"
+    echo -e "  Local:      http://localhost:8000"
+    echo -e "  Nginx:      http://localhost"
+    PUBLIC_IP=$(curl -s ifconfig.me 2>/dev/null)
+    if [[ -n "$PUBLIC_IP" ]]; then
+        if [[ $PUBLIC_IP =~ : ]]; then
+            echo -e "  Public IP:  http://[$PUBLIC_IP]"
+            echo -e "              $PUBLIC_IP"
+        else
+            echo -e "  Public IP:  http://$PUBLIC_IP"
+            echo -e "              $PUBLIC_IP"
+        fi
+    else
+        echo -e "  Public IP:  ${YELLOW}(unable to detect)${NC}"
+    fi
+    echo -e "  Domain:     http://tonyler.is-not-a.dev ${YELLOW}(pending approval)${NC}"
+
+    # Files
+    echo ""
+    echo -e "${GREEN}Files & Directories:${NC}"
+    echo -e "  Working Dir:    $SCRIPT_DIR"
+    echo -e "  Service File:   /etc/systemd/system/$SERVICE_NAME.service"
+    echo -e "  Nginx Config:   /etc/nginx/sites-available/passivmos"
+    echo -e "  Virtual Env:    $SCRIPT_DIR/venv"
+    echo -e "  Sessions:       $SCRIPT_DIR/sessions/"
+    echo -e "  Cache:          $SCRIPT_DIR/data/cache/"
+
+    # Health
+    echo ""
+    echo -e "${GREEN}Quick Health:${NC}"
+    HEALTH_RESPONSE=$(curl -s http://localhost:8000/api/health 2>&1)
+    if echo "$HEALTH_RESPONSE" | grep -q "healthy"; then
+        echo -e "  App Health:     ${GREEN}Healthy ✅${NC}"
+        CACHED=$(echo "$HEALTH_RESPONSE" | grep -oP '"cached_tokens":\s*\K\d+' || echo "0")
+        echo -e "  Cached Tokens:  $CACHED"
+    else
+        echo -e "  App Health:     ${RED}Unhealthy ❌${NC}"
+    fi
+}
+
+# Show URLs
+show_urls() {
+    print_header "Access URLs"
+
+    echo -e "${GREEN}Local Access:${NC}"
+    echo -e "  http://localhost:8000"
+    echo -e "  http://localhost"
+
+    echo ""
+    echo -e "${GREEN}Public Access:${NC}"
+    PUBLIC_IP=$(curl -s ifconfig.me 2>/dev/null)
+    if [[ -n "$PUBLIC_IP" ]]; then
+        if [[ $PUBLIC_IP =~ : ]]; then
+            echo -e "  http://[$PUBLIC_IP]"
+            echo -e "  IP: $PUBLIC_IP"
+        else
+            echo -e "  http://$PUBLIC_IP"
+            echo -e "  IP: $PUBLIC_IP"
+        fi
+    else
+        echo -e "  ${YELLOW}Unable to detect public IP${NC}"
+    fi
+
+    echo ""
+    echo -e "${GREEN}Domain (once approved):${NC}"
+    echo -e "  http://tonyler.is-not-a.dev"
+    echo -e "  Track approval: ${BLUE}https://github.com/open-domains/register/pull/2851${NC}"
+}
+
+# Reload nginx
+reload_nginx() {
+    print_header "Reloading Nginx"
+    sudo nginx -t
+    sudo systemctl reload nginx
+    print_success "Nginx reloaded"
+}
+
+# Install service
+install_service() {
+    print_header "Installing/Updating PassivMOS Service"
+
+    # Create service file
+    cat > /tmp/$SERVICE_NAME.service << EOF
+[Unit]
+Description=PassivMOS Webapp - Cosmos Passive Income Calculator
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=$SCRIPT_DIR
+ExecStart=$SCRIPT_DIR/venv/bin/python $SCRIPT_DIR/backend/main.py
+Restart=always
+RestartSec=10
+Environment="PATH=$SCRIPT_DIR/venv/bin:/usr/bin:/usr/local/bin"
+Environment="PYTHONUNBUFFERED=1"
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=$SERVICE_NAME
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    sudo cp /tmp/$SERVICE_NAME.service /etc/systemd/system/$SERVICE_NAME.service
+    sudo systemctl daemon-reload
+    sudo systemctl enable $SERVICE_NAME
+
+    print_success "Service installed and enabled"
+    print_info "Start with: ./passivmos start"
+}
+
+# Uninstall service
+uninstall_service() {
+    print_header "Uninstalling PassivMOS Service"
+
+    read -p "Are you sure you want to uninstall? (y/n): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        print_info "Cancelled"
+        exit 0
+    fi
+
+    sudo systemctl stop $SERVICE_NAME || true
+    sudo systemctl disable $SERVICE_NAME || true
+    sudo rm /etc/systemd/system/$SERVICE_NAME.service || true
+    sudo systemctl daemon-reload
+
+    print_success "Service uninstalled"
+}
+
+# Main script
+main() {
+    case "${1:-}" in
+        start)
+            start_service
+            ;;
+        stop)
+            stop_service
+            ;;
+        restart)
+            restart_service
+            ;;
+        status)
+            show_status
+            ;;
+        logs)
+            view_logs
+            ;;
+        logs-tail)
+            view_logs_tail
+            ;;
+        health)
+            check_health
+            ;;
+        info)
+            show_info
+            ;;
+        url|urls)
+            show_urls
+            ;;
+        reload-nginx)
+            reload_nginx
+            ;;
+        install)
+            install_service
+            ;;
+        uninstall)
+            uninstall_service
+            ;;
+        help|--help|-h|"")
+            show_usage
+            ;;
+        *)
+            print_error "Unknown command: $1"
+            echo ""
+            show_usage
+            exit 1
+            ;;
+    esac
+}
+
+# Run main
+main "$@"

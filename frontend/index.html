@@ -176,16 +176,7 @@
         <!-- Stats Modal -->
         <div id="statsModal" class="hidden">
             <div class="section">
-                <div class="header-row">
-                    <h2>Current Token Prices & APRs</h2>
-                    <button onclick="hideStats()" style="width: auto; padding: 8px 20px;">Close</button>
-                </div>
-
-                <div class="info-box">
-                    <strong>Data Source:</strong> <span id="statsMessage">Loading...</span>
-                    <br><strong>Last Updated:</strong> <span id="statsLastUpdated">-</span>
-                    <br><strong style="margin-top: 5px; display: inline-block;">If something is wrong:</strong> <a href="https://t.me/tonyler" target="_blank" style="color: #0066cc; text-decoration: underline;">Contact @tonyler on Telegram</a>
-                </div>
+                <h2>Current Token Prices & APRs</h2>
 
                 <table>
                     <thead>
@@ -200,6 +191,18 @@
                         <tr><td colspan="4" style="text-align: center;">Loading...</td></tr>
                     </tbody>
                 </table>
+
+                <h3 style="margin-top: 20px; border-bottom: 1px solid #333; padding-bottom: 5px;">Supported Networks</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin: 15px 0;">
+                    <div style="padding: 8px; border: 1px solid #ddd; background: #f9f9f9;">Cosmos Hub (ATOM)</div>
+                    <div style="padding: 8px; border: 1px solid #ddd; background: #f9f9f9;">Osmosis (OSMO)</div>
+                    <div style="padding: 8px; border: 1px solid #ddd; background: #f9f9f9;">Celestia (TIA)</div>
+                    <div style="padding: 8px; border: 1px solid #ddd; background: #f9f9f9;">Juno (JUNO)</div>
+                    <div style="padding: 8px; border: 1px solid #ddd; background: #f9f9f9;">Chihuahua (HUAHUA)</div>
+                    <div style="padding: 8px; border: 1px solid #ddd; background: #f9f9f9;">Dymension (DYM)</div>
+                    <div style="padding: 8px; border: 1px solid #ddd; background: #f9f9f9;">Saga (SAGA)</div>
+                    <div style="padding: 8px; border: 1px solid #ddd; background: #f9f9f9;">Nolus (NLS)</div>
+                </div>
 
                 <button onclick="hideStats(); showElement('loginScreen');" style="margin-top: 10px;">Back to Login</button>
             </div>
@@ -220,10 +223,6 @@
             <!-- Address Editor -->
             <div class="section">
                 <h2>Your Wallet Addresses</h2>
-                <div class="info-box">
-                    TIP: Add one address per line. System checks all chains automatically via bech32 conversion.
-                    <br>Supports: cosmos1, osmo1, celestia1, juno1, chihuahua1, dym1, saga1, nolus1
-                </div>
                 <textarea id="addressesTextarea" rows="8" placeholder="cosmos1abc123...&#10;osmo1xyz456..."></textarea>
                 <div class="button-row">
                     <button onclick="saveAddresses()">Save Addresses</button>
@@ -234,7 +233,6 @@
             <!-- Loading Indicator -->
             <div id="loadingIndicator" class="hidden section">
                 <h2><span class="spinner"></span> Analyzing Wallets...</h2>
-                <p>Real-time progress from blockchain APIs + Numia price data</p>
                 <div class="terminal" id="terminalLog"></div>
             </div>
 
@@ -302,6 +300,6 @@
         </div>
     </div>
 
-    <script src="/static/app.js"></script>
+    <script src="/static/app.js?v=3"></script>
 </body>
 </html>

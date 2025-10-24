@@ -60,7 +60,6 @@ class PriceAPRScraper:
                 price_obj = price_data.get(symbol)
                 price = price_obj.price if price_obj else 0.0
 
-                # APR data now includes status
                 apr_info = apr_data.get(symbol, {'apr': 10.0, 'status': 'error', 'source': 'default'})
 
                 token_data[symbol] = TokenData(

@@ -33,15 +33,10 @@ from config_loader import config
 logger = logging.getLogger(__name__)
 
 # === DATA STRUCTURES ===
-# AI NOTE: These dataclasses define the return format
 
 @dataclass
 class DelegationInfo:
-    """
-    Single delegation to a validator
-
-    AI MODIFICATION: Add new fields here for additional delegation data
-    """
+    """Single delegation to a validator"""
     validator_address: str  # Validator's address
     validator_name: str     # Human-readable name
     amount: float          # Delegated amount
@@ -97,9 +92,6 @@ class WalletAddressAnalyzer:
     def __init__(self, config_path: Optional[str] = None):
         self.session = None  # aiohttp session (lazy loaded)
 
-        # === BLOCKCHAIN CONFIGURATIONS ===
-        # AI NOTE: Configurations are now loaded from master config.json
-        # To add/enable/disable chains, edit config.json in project root
         self.chain_configs = config.get_all_network_configs()
 
     async def __aenter__(self):
@@ -123,41 +115,51 @@ class WalletAddressAnalyzer:
         return None
 
     async def get_wallet_balance(self, address: str, chain: str) -> Optional[WalletBalance]:
-        """Get wallet balance and delegations for a specific chain"""
+        """Get wallet balance and delegations for a specific chain with timeout"""
         try:
-            config = self.chain_configs.get(chain)
-            if not config:
-                logger.error(f"Unsupported chain: {chain}")
-                return None
-
-            # Try multiple endpoints
-            for endpoint in config['rest_endpoints']:
-                try:
-                    balance_info = await self._fetch_balance(address, endpoint, config)
-                    if balance_info:
-                        delegations = await self._fetch_delegations(address, endpoint, config)
-
-                        total_delegated = sum(d.amount for d in delegations) if delegations else 0.0
-
-                        return WalletBalance(
-                            address=address,
-                            chain=chain,
-                            token_symbol=config['token_symbol'],
-                            available_balance=balance_info,
-                            delegated_balance=total_delegated,
-                            total_balance=balance_info + total_delegated,
-                            delegations=delegations or []
-                        )
-                except Exception as e:
-                    logger.warning(f"Failed endpoint {endpoint}: {e}")
-                    continue
-
-            logger.error(f"All endpoints failed for {chain}")
+            # Apply 15 second timeout per chain
+            return await asyncio.wait_for(
+                self._get_wallet_balance_internal(address, chain),
+                timeout=15.0
+            )
+        except asyncio.TimeoutError:
+            logger.error(f"Timeout fetching balance for {address} on {chain}")
             return None
-
         except Exception as e:
             logger.error(f"Error analyzing wallet {address} on {chain}: {e}")
             return None
+
+    async def _get_wallet_balance_internal(self, address: str, chain: str) -> Optional[WalletBalance]:
+        """Internal wallet balance fetch logic"""
+        config = self.chain_configs.get(chain)
+        if not config:
+            logger.error(f"Unsupported chain: {chain}")
+            return None
+
+        # Try multiple endpoints
+        for endpoint in config['rest_endpoints']:
+            try:
+                balance_info = await self._fetch_balance(address, endpoint, config)
+                if balance_info is not None:
+                    delegations = await self._fetch_delegations(address, endpoint, config)
+
+                    total_delegated = sum(d.amount for d in delegations) if delegations else 0.0
+
+                    return WalletBalance(
+                        address=address,
+                        chain=chain,
+                        token_symbol=config['token_symbol'],
+                        available_balance=balance_info,
+                        delegated_balance=total_delegated,
+                        total_balance=balance_info + total_delegated,
+                        delegations=delegations or []
+                    )
+            except Exception as e:
+                logger.warning(f"Failed endpoint {endpoint}: {e}")
+                continue
+
+        logger.error(f"All endpoints failed for {chain}")
+        return None
 
     async def _fetch_balance(self, address: str, endpoint: str, config: Dict) -> Optional[float]:
         """Fetch available balance from REST API"""

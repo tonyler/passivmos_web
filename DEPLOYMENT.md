@@ -194,8 +194,8 @@ After=network.target
 [Service]
 Type=simple
 User=YOUR_USERNAME
-WorkingDirectory=/path/to/passivmos_web
-ExecStart=/usr/bin/python3 /path/to/passivmos_web/backend/main.py
+WorkingDirectory=/root/flyfix
+ExecStart=/usr/bin/python3 /root/flyfix/backend/main.py
 Restart=always
 RestartSec=10
 
@@ -222,7 +222,7 @@ Through open-domains, you can choose from many free domains:
 - `*.is-an.app`
 - `*.is-a.dev`
 - `*.js.org`
-- `*.runs.gg`
+- `*.is-not-a.dev`
 - `*.publicvm.com`
 - And many more...
 

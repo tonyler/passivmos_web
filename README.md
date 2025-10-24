@@ -14,6 +14,19 @@ Passive income calculator for Cosmos ecosystem wallets.
 ./stop.sh
 ```
 
+**Manage (recommended):**
+```bash
+./passivmos start       # Start the app
+./passivmos stop        # Stop the app
+./passivmos status      # Check status
+./passivmos logs        # View live logs
+./passivmos health      # Health check
+./passivmos info        # Show everything
+./passivmos help        # See all commands
+```
+
+See **[MANAGEMENT.md](MANAGEMENT.md)** for complete management guide.
+
 Opens at `http://localhost:8000`
 
 **Includes automatic background tasks:**
