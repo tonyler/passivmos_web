@@ -664,7 +664,7 @@ async def get_stats():
     }
 
 async def background_price_collector():
-    """Background task to collect prices and APRs every 5 minutes"""
+    """Background task to collect prices and APRs every 10 minutes"""
     while True:
         try:
             logger.info("🔄 Running background price/APR collection...")
@@ -673,8 +673,8 @@ async def background_price_collector():
         except Exception as e:
             logger.error(f"❌ Background collection error: {e}")
 
-        # Wait 5 minutes
-        await asyncio.sleep(300)
+        # Wait 10 minutes
+        await asyncio.sleep(600)
 
 @app.on_event("startup")
 async def startup_event():
@@ -704,7 +704,7 @@ async def startup_event():
     asyncio.create_task(initial_fetch())
 
     # Start background collection task
-    logger.info("⏰ Starting background collector (every 5 minutes)")
+    logger.info("⏰ Starting background collector (every 10 minutes)")
     asyncio.create_task(background_price_collector())
 
     logger.info("✅ Webapp ready at http://localhost:8000")

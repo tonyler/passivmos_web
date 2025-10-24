@@ -40,8 +40,8 @@ class APRScraper:
 
         self.memory_cache = {}  # In-memory cache
         self.cache_timestamps = {}
-        self.fresh_duration = 3600  # 1 hour = fresh
-        self.stale_duration = 86400  # 24 hours = stale but usable
+        self.fresh_duration = 600  # 10 minutes = fresh (matches background update interval)
+        self.stale_duration = 3600  # 1 hour = stale but usable
 
         # Load config fallbacks
         self.config_fallbacks = {}
