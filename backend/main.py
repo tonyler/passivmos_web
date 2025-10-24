@@ -673,7 +673,7 @@ async def background_price_collector():
         except Exception as e:
             logger.error(f"❌ Background collection error: {e}")
 
-        # Wait 10 minutes
+        # Wait 10 minutes before next run
         await asyncio.sleep(600)
 
 @app.on_event("startup")
@@ -691,20 +691,8 @@ async def startup_event():
     except Exception as e:
         logger.warning(f"⚠️  No cache available: {e}")
 
-    # Schedule initial data fetch as background task (non-blocking)
-    async def initial_fetch():
-        await asyncio.sleep(2)  # Small delay to let server start first
-        try:
-            logger.info("📊 Fetching fresh price/APR data in background...")
-            await price_scraper.scrape_all()
-            logger.info("✅ Fresh data loaded")
-        except Exception as e:
-            logger.error(f"⚠️ Initial fetch failed: {e}")
-
-    asyncio.create_task(initial_fetch())
-
-    # Start background collection task
-    logger.info("⏰ Starting background collector (every 10 minutes)")
+    # Start background collection task (runs immediately, then every 10 minutes)
+    logger.info("⏰ Starting background collector (runs now, then every 10 minutes)")
     asyncio.create_task(background_price_collector())
 
     logger.info("✅ Webapp ready at http://localhost:8000")
