@@ -67,7 +67,7 @@ else
 
     # Start the server
     echo "🌐 Starting server on http://localhost:8000"
-    echo "📊 Background tasks: Price collection + APR scraping (every 5 min)"
+    echo "📊 Background tasks: Price collection + APR scraping (every 10 min)"
     echo "Press Ctrl+C to stop"
     echo ""
     cd backend
