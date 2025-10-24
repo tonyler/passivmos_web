@@ -683,20 +683,25 @@ async def startup_event():
     logger.info("💎 Using Numia API for price data (Osmosis DEX)")
     logger.info("🕷️  APR scraping from Keplr wallet")
 
-    # Initial data fetch
+    # Try to load from cache immediately (non-blocking)
     try:
-        logger.info("📊 Fetching initial price/APR data...")
-        await price_scraper.scrape_all()
-        logger.info("✅ Initial data loaded")
+        cached = price_scraper.load_cache()
+        if cached:
+            logger.info(f"📂 Loaded cached data for {len(cached)} tokens")
     except Exception as e:
-        logger.error(f"⚠️ Initial fetch failed, will retry: {e}")
-        # Try to load from cache
+        logger.warning(f"⚠️  No cache available: {e}")
+
+    # Schedule initial data fetch as background task (non-blocking)
+    async def initial_fetch():
+        await asyncio.sleep(2)  # Small delay to let server start first
         try:
-            cached = price_scraper.load_cache()
-            if cached:
-                logger.info(f"📂 Loaded cached data for {len(cached)} tokens")
-        except Exception:
-            pass
+            logger.info("📊 Fetching fresh price/APR data in background...")
+            await price_scraper.scrape_all()
+            logger.info("✅ Fresh data loaded")
+        except Exception as e:
+            logger.error(f"⚠️ Initial fetch failed: {e}")
+
+    asyncio.create_task(initial_fetch())
 
     # Start background collection task
     logger.info("⏰ Starting background collector (every 5 minutes)")

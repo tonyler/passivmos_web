@@ -21,6 +21,9 @@ from config_loader import config
 
 logger = logging.getLogger(__name__)
 
+# Global lock to ensure only ONE scraping operation at a time across all instances
+_global_scraping_lock = asyncio.Lock()
+
 class APRScraper:
     """APR scraper for Cosmos ecosystem tokens - Keplr only with robust caching"""
 
@@ -288,6 +291,7 @@ class APRScraper:
         """
         Get APRs for multiple tokens - NEVER FAILS
         Returns cached/fallback values if scraping fails
+        Uses global lock to ensure only ONE scraping operation at a time
         """
         logger.info(f"Fetching APRs for {len(tokens)} tokens...")
 
@@ -309,52 +313,65 @@ class APRScraper:
             logger.info("All tokens have fresh cache")
             return apr_dict
 
-        # Scrape tokens that need it
-        logger.info(f"Scraping {len(tokens_to_scrape)} tokens: {', '.join(tokens_to_scrape)}")
+        # Use global lock to ensure only ONE scraping operation at a time
+        # If another scrape is in progress, wait for it to finish then use cache
+        if _global_scraping_lock.locked():
+            logger.info("Another scraping operation in progress, waiting for it to finish...")
+            async with _global_scraping_lock:
+                # Scraping finished, check cache again
+                for token in tokens_to_scrape:
+                    apr_dict[token] = self._get_cached_or_fallback(token)
+                return apr_dict
 
-        semaphore = asyncio.Semaphore(2)  # Max 2 concurrent
+        # Acquire lock and scrape tokens - ONE AT A TIME (sequential)
+        async with _global_scraping_lock:
+            logger.info(f"Scraping {len(tokens_to_scrape)} tokens sequentially: {', '.join(tokens_to_scrape)}")
 
-        async def scrape_single(token):
-            async with semaphore:
+            results = []
+            for token in tokens_to_scrape:
                 try:
                     # Skip if configured to skip scraping
                     token_config = config.get_token_config(token)
                     if token_config and token_config.get('skip_apr_scraping', False):
                         logger.info(f"{token}: Skipping scraping (configured)")
-                        return token, None
+                        results.append((token, None))
+                        continue
 
-                    apr = await self.scrape_keplr_apr(token)
-                    return token, apr
+                    # Scrape with timeout per token (30s max)
+                    try:
+                        apr = await asyncio.wait_for(
+                            self.scrape_keplr_apr(token),
+                            timeout=30.0
+                        )
+                        results.append((token, apr))
+                        logger.info(f"{token}: Scraped successfully - {apr}%")
+
+                        # Small delay between scrapes to avoid overwhelming the system
+                        await asyncio.sleep(0.5)
+
+                    except asyncio.TimeoutError:
+                        logger.error(f"{token}: Scraping timed out after 30s")
+                        results.append((token, None))
+
                 except Exception as e:
                     logger.error(f"{token}: Exception during scraping: {e}")
-                    return token, None
+                    results.append((token, None))
 
-        # Scrape with timeout
-        tasks = [scrape_single(token) for token in tokens_to_scrape]
-        try:
-            results = await asyncio.wait_for(
-                asyncio.gather(*tasks, return_exceptions=True),
-                timeout=120  # 2 minute timeout
-            )
-        except asyncio.TimeoutError:
-            logger.error("Scraping timed out, using cache/fallback")
-            results = [(token, None) for token in tokens_to_scrape]
+            # Process results
+            for result in results:
+                if isinstance(result, Exception):
+                    logger.error(f"Exception in scraping: {result}")
+                    continue
 
-        # Process results
-        for result in results:
-            if isinstance(result, Exception):
-                logger.error(f"Exception in scraping: {result}")
-                continue
+                token, apr = result
+                if apr is not None:
+                    apr_dict[token] = apr
+                else:
+                    # Scraping failed, use cache or fallback
+                    apr_dict[token] = self._get_cached_or_fallback(token)
 
-            token, apr = result
-            if apr is not None:
-                apr_dict[token] = apr
-            else:
-                # Scraping failed, use cache or fallback
-                apr_dict[token] = self._get_cached_or_fallback(token)
-
-        # Clean up browser
-        await self.cleanup_browser()
+            # Clean up browser
+            await self.cleanup_browser()
 
         # Ensure ALL tokens have a value (should already, but double-check)
         for token in tokens:
