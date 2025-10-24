@@ -22,6 +22,14 @@ Opens at `http://localhost:8000`
 
 No separate scripts needed!
 
+## Deploy Globally
+
+Want to make your app accessible from anywhere? See **[DEPLOYMENT.md](DEPLOYMENT.md)** for:
+- Running on a VPS with a public IP
+- Getting a free domain from [open-domains](https://github.com/open-domains/register)
+- Using Cloudflare Tunnel or ngrok for instant public access
+- Setting up as a system service for 24/7 operation
+
 ## Configuration
 
 **Everything** is configured in `config.json`:

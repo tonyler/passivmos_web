@@ -1,0 +1,50 @@
+# Environment files with secrets
+.env
+backend/.env
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# User data - sessions contain wallet addresses
+sessions/*.json
+!sessions/.gitkeep
+
+# Cache data - may contain API responses
+data/cache/*.json
+backend/data/cache/*.json
+!data/cache/.gitkeep
+!backend/data/cache/.gitkeep
+
+# Playwright cache
+.cache/
+ms-playwright/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
