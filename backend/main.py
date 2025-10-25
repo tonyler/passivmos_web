@@ -334,63 +334,76 @@ async def calculate_portfolio_generator(code: str):
 
                     yield send_event("progress", {"message": f"✅ Checking {len(all_chain_addresses)} chains for address {address_count}...", "step": 4 + address_count, "total": 10})
 
-                    # Check balance on each chain variant
-                    for chain_name, chain_address in all_chain_addresses.items():
+                    # Check balance on all chains in parallel
+                    async def check_chain(chain_name, chain_address):
                         try:
-                            # Get wallet balance
                             wallet_balance = await analyzer.get_wallet_balance(chain_address, chain_name)
-
-                            # Skip if no balance found
                             if not wallet_balance or wallet_balance.total_balance == 0:
-                                continue
+                                return None
+                            return (chain_name, chain_address, wallet_balance)
+                        except Exception:
+                            return None
 
-                            # Found balance!
-                            yield send_event("found", {"message": f"💰 Found {wallet_balance.total_balance:.2f} {wallet_balance.token_symbol} on {chain_name}", "chain": chain_name, "token": wallet_balance.token_symbol, "balance": wallet_balance.total_balance})
+                    # Create tasks for all chains
+                    chain_tasks = [
+                        check_chain(chain_name, chain_address)
+                        for chain_name, chain_address in all_chain_addresses.items()
+                    ]
 
-                            # Get token data
-                            token_symbol = wallet_balance.token_symbol
-                            token_data = cached_data.get(token_symbol)
+                    # Wait for all chain checks to complete
+                    chain_results = await asyncio.gather(*chain_tasks)
 
-                            if not token_data:
-                                yield send_event("warning", {"message": f"⚠️  No price data for {token_symbol}"})
-                                continue
-
-                            # Check if APR is valid (not 0 or error status)
-                            has_apr_issue = token_data.apr_status in ['error', 'fallback'] or token_data.apr == 0
-                            apr_to_use = token_data.apr if not has_apr_issue else 0
-
-                            # Calculate earnings (0 if APR failed)
-                            total_value_usd = wallet_balance.total_balance * token_data.price
-                            if apr_to_use > 0:
-                                yearly_earnings = wallet_balance.delegated_balance * (apr_to_use / 100) * token_data.price
-                                daily_earnings = yearly_earnings / 365
-                                monthly_earnings = yearly_earnings / 12
-                            else:
-                                yearly_earnings = 0
-                                daily_earnings = 0
-                                monthly_earnings = 0
-
-                            wallet_analyses.append({
-                                'address': chain_address,
-                                'original_address': address,
-                                'chain': chain_name,
-                                'token_symbol': token_symbol,
-                                'available_balance': wallet_balance.available_balance,
-                                'delegated_balance': wallet_balance.delegated_balance,
-                                'total_balance': wallet_balance.total_balance,
-                                'token_price': token_data.price,
-                                'apr': apr_to_use,
-                                'apr_status': token_data.apr_status,
-                                'apr_source': token_data.apr_source,
-                                'has_apr_issue': has_apr_issue,
-                                'total_value_usd': total_value_usd,
-                                'daily_earnings': daily_earnings,
-                                'monthly_earnings': monthly_earnings,
-                                'yearly_earnings': yearly_earnings
-                            })
-
-                        except Exception as e:
+                    # Process results
+                    for result in chain_results:
+                        if result is None:
                             continue
+
+                        chain_name, chain_address, wallet_balance = result
+
+                        # Found balance!
+                        yield send_event("found", {"message": f"💰 Found {wallet_balance.total_balance:.2f} {wallet_balance.token_symbol} on {chain_name}", "chain": chain_name, "token": wallet_balance.token_symbol, "balance": wallet_balance.total_balance})
+
+                        # Get token data
+                        token_symbol = wallet_balance.token_symbol
+                        token_data = cached_data.get(token_symbol)
+
+                        if not token_data:
+                            yield send_event("warning", {"message": f"⚠️  No price data for {token_symbol}"})
+                            continue
+
+                        # Check if APR is valid (not 0 or error status)
+                        has_apr_issue = token_data.apr_status in ['error', 'fallback'] or token_data.apr == 0
+                        apr_to_use = token_data.apr if not has_apr_issue else 0
+
+                        # Calculate earnings (0 if APR failed)
+                        total_value_usd = wallet_balance.total_balance * token_data.price
+                        if apr_to_use > 0:
+                            yearly_earnings = wallet_balance.delegated_balance * (apr_to_use / 100) * token_data.price
+                            daily_earnings = yearly_earnings / 365
+                            monthly_earnings = yearly_earnings / 12
+                        else:
+                            yearly_earnings = 0
+                            daily_earnings = 0
+                            monthly_earnings = 0
+
+                        wallet_analyses.append({
+                            'address': chain_address,
+                            'original_address': address,
+                            'chain': chain_name,
+                            'token_symbol': token_symbol,
+                            'available_balance': wallet_balance.available_balance,
+                            'delegated_balance': wallet_balance.delegated_balance,
+                            'total_balance': wallet_balance.total_balance,
+                            'token_price': token_data.price,
+                            'apr': apr_to_use,
+                            'apr_status': token_data.apr_status,
+                            'apr_source': token_data.apr_source,
+                            'has_apr_issue': has_apr_issue,
+                            'total_value_usd': total_value_usd,
+                            'daily_earnings': daily_earnings,
+                            'monthly_earnings': monthly_earnings,
+                            'yearly_earnings': yearly_earnings
+                        })
 
                 except Exception as e:
                     yield send_event("error", {"message": f"❌ Error analyzing address: {str(e)}"})
@@ -516,6 +529,43 @@ async def _calculate_portfolio_internal(code: str):
     async with WalletAddressAnalyzer() as analyzer:
         wallet_analyses = []
 
+        # Helper function to check a single chain
+        async def check_chain_balance(address, chain_name, chain_address):
+            try:
+                wallet_balance = await analyzer.get_wallet_balance(chain_address, chain_name)
+                if not wallet_balance or wallet_balance.total_balance == 0:
+                    return None
+
+                token_symbol = wallet_balance.token_symbol
+                token_data = cached_data.get(token_symbol)
+                if not token_data:
+                    return None
+
+                total_value_usd = wallet_balance.total_balance * token_data.price
+                yearly_earnings = wallet_balance.delegated_balance * (token_data.apr / 100) * token_data.price
+                daily_earnings = yearly_earnings / 365
+                monthly_earnings = yearly_earnings / 12
+
+                return {
+                    'address': chain_address,
+                    'original_address': address,
+                    'chain': chain_name,
+                    'token_symbol': token_symbol,
+                    'available_balance': wallet_balance.available_balance,
+                    'delegated_balance': wallet_balance.delegated_balance,
+                    'total_balance': wallet_balance.total_balance,
+                    'token_price': token_data.price,
+                    'apr': token_data.apr,
+                    'total_value_usd': total_value_usd,
+                    'daily_earnings': daily_earnings,
+                    'monthly_earnings': monthly_earnings,
+                    'yearly_earnings': yearly_earnings
+                }
+            except Exception:
+                return None
+
+        # Create all tasks for all addresses and chains
+        all_tasks = []
         for address in session.addresses:
             try:
                 all_chain_addresses = Bech32Converter.get_all_chain_addresses(address)
@@ -523,40 +573,15 @@ async def _calculate_portfolio_internal(code: str):
                     continue
 
                 for chain_name, chain_address in all_chain_addresses.items():
-                    try:
-                        wallet_balance = await analyzer.get_wallet_balance(chain_address, chain_name)
-                        if not wallet_balance or wallet_balance.total_balance == 0:
-                            continue
-
-                        token_symbol = wallet_balance.token_symbol
-                        token_data = cached_data.get(token_symbol)
-                        if not token_data:
-                            continue
-
-                        total_value_usd = wallet_balance.total_balance * token_data.price
-                        yearly_earnings = wallet_balance.delegated_balance * (token_data.apr / 100) * token_data.price
-                        daily_earnings = yearly_earnings / 365
-                        monthly_earnings = yearly_earnings / 12
-
-                        wallet_analyses.append({
-                            'address': chain_address,
-                            'original_address': address,
-                            'chain': chain_name,
-                            'token_symbol': token_symbol,
-                            'available_balance': wallet_balance.available_balance,
-                            'delegated_balance': wallet_balance.delegated_balance,
-                            'total_balance': wallet_balance.total_balance,
-                            'token_price': token_data.price,
-                            'apr': token_data.apr,
-                            'total_value_usd': total_value_usd,
-                            'daily_earnings': daily_earnings,
-                            'monthly_earnings': monthly_earnings,
-                            'yearly_earnings': yearly_earnings
-                        })
-                    except Exception:
-                        continue
+                    all_tasks.append(check_chain_balance(address, chain_name, chain_address))
             except Exception:
                 continue
+
+        # Execute all tasks in parallel
+        results = await asyncio.gather(*all_tasks)
+
+        # Collect valid results
+        wallet_analyses = [r for r in results if r is not None]
 
     # Aggregate totals
     total_portfolio_value = sum(w['total_value_usd'] for w in wallet_analyses)

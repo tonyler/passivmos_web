@@ -114,10 +114,13 @@ class WalletAddressAnalyzer:
         # Try multiple endpoints
         for endpoint in config['rest_endpoints']:
             try:
-                balance_info = await self._fetch_balance(address, endpoint, config)
-                if balance_info is not None:
-                    delegations = await self._fetch_delegations(address, endpoint, config)
+                # Fetch balance and delegations in parallel
+                balance_task = self._fetch_balance(address, endpoint, config)
+                delegations_task = self._fetch_delegations(address, endpoint, config)
 
+                balance_info, delegations = await asyncio.gather(balance_task, delegations_task)
+
+                if balance_info is not None:
                     total_delegated = sum(d.amount for d in delegations) if delegations else 0.0
 
                     return WalletBalance(
