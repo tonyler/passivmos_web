@@ -10,7 +10,6 @@ import re
 import json
 import time
 from typing import Dict, Optional, List
-from datetime import datetime, timezone
 from pathlib import Path
 import logging
 from playwright.async_api import async_playwright, Page, Browser
@@ -137,7 +136,7 @@ class APRScraper:
             logger.info(f"{token}: Using config fallback APR: {fallback_apr}%")
             # Cache this value so it's available next time
             self.memory_cache[token] = fallback_apr
-            self.cache_timestamps[token] = datetime.now(timezone.utc)
+            self.cache_timestamps[token] = time.time()
             self._save_cache_to_disk()
             return fallback_apr
 
