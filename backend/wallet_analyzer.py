@@ -1,22 +1,13 @@
 #!/usr/bin/env python3
 """
-=== WALLET ADDRESS ANALYZER ===
-Analyzes Cosmos ecosystem wallet addresses for passive income calculations
+Wallet Address Analyzer
 
-WHAT IT DOES:
-- Takes wallet addresses (cosmos1..., osmo1..., etc)
-- Fetches balances and staking data from blockchain APIs
-- Calculates passive income projections (daily/monthly/yearly)
-- Returns structured analysis data for Discord bot display
+Analyzes Cosmos ecosystem wallet addresses for passive income calculations.
+Fetches balances and staking data from blockchain APIs and calculates
+passive income projections (daily/monthly/yearly).
 
-AI MODIFICATION GUIDE:
-- Add new chains: Update chain_configs dict
-- Change API endpoints: Modify rest_endpoints in chain configs
-- Add new data sources: Extend the analysis methods
-- Modify calculations: Update earnings calculation logic
-
-SUPPORTED CHAINS: Cosmos, Osmosis, Celestia, Juno, Chihuahua, Dymension, Saga, Nolus
-DATA SOURCES: Chain REST APIs, cached price/APR data
+Supported chains: Cosmos, Osmosis, Celestia, Juno, Chihuahua, Dymension, Saga, Nolus
+Data sources: Chain REST APIs, cached price/APR data
 """
 
 import asyncio
@@ -32,8 +23,6 @@ from config_loader import config
 
 logger = logging.getLogger(__name__)
 
-# === DATA STRUCTURES ===
-
 @dataclass
 class DelegationInfo:
     """Single delegation to a validator"""
@@ -45,11 +34,7 @@ class DelegationInfo:
 
 @dataclass
 class WalletBalance:
-    """
-    Complete balance info for one address on one chain
-
-    AI MODIFICATION: This structure is returned to Discord bot
-    """
+    """Complete balance info for one address on one chain"""
     address: str               # Wallet address
     chain: str                # Chain name (cosmos, osmosis, etc)
     token_symbol: str         # Main token symbol
@@ -60,11 +45,7 @@ class WalletBalance:
 
 @dataclass
 class WalletAnalysis:
-    """
-    Final analysis result for one wallet address
-
-    AI MODIFICATION: This is what Discord bot receives and displays
-    """
+    """Final analysis result for one wallet address"""
     address: str               # Original wallet address
     chain: str                # Detected chain
     balances: List[WalletBalance]  # All token balances found
@@ -74,19 +55,13 @@ class WalletAnalysis:
     yearly_earnings: float    # Projected yearly earnings (USD)
     error_message: Optional[str] = None  # Error if analysis failed
 
-# === MAIN ANALYZER CLASS ===
 class WalletAddressAnalyzer:
     """
     Main class for analyzing Cosmos ecosystem wallet addresses
 
-    USAGE:
-    async with WalletAddressAnalyzer() as analyzer:
-        results = await analyzer.analyze_addresses_cached(['cosmos1...'])
-
-    AI MODIFICATION GUIDE:
-    - Add new chains: Update chain_configs dict below
-    - Change API endpoints: Modify rest_endpoints arrays
-    - Add new analysis types: Extend analyze methods
+    Usage:
+        async with WalletAddressAnalyzer() as analyzer:
+            results = await analyzer.analyze_addresses(['cosmos1...'])
     """
 
     def __init__(self, config_path: Optional[str] = None):
@@ -300,123 +275,6 @@ class WalletAddressAnalyzer:
 
         logger.info(f"Successfully analyzed {len(valid_results)}/{len(addresses)} addresses")
         return valid_results
-
-    async def analyze_addresses_cached(self, addresses: List[str], cache_manager) -> List[WalletAnalysis]:
-        """Analyze multiple wallet addresses using cached data"""
-        if not addresses:
-            return []
-
-        logger.info(f"Analyzing {len(addresses)} wallet addresses using cached data...")
-
-        results = []
-
-        # Process addresses concurrently with rate limiting
-        semaphore = asyncio.Semaphore(10)  # Higher limit since we're using cache
-
-        async def analyze_single_address_cached(address):
-            async with semaphore:
-                return await self._analyze_single_address_cached(address, cache_manager)
-
-        tasks = [analyze_single_address_cached(addr.strip()) for addr in addresses if addr.strip()]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-
-        # Filter out exceptions
-        valid_results = []
-        for result in results:
-            if isinstance(result, Exception):
-                logger.error(f"Error analyzing address: {result}")
-                continue
-            if result:
-                valid_results.append(result)
-
-        logger.info(f"Successfully analyzed {len(valid_results)}/{len(addresses)} addresses using cache")
-        return valid_results
-
-    async def _analyze_single_address_cached(self, address: str, cache_manager) -> Optional[WalletAnalysis]:
-        """Analyze a single wallet address using cached data"""
-        try:
-            # Identify chain from address
-            chain = self.identify_chain_from_address(address)
-            if not chain:
-                return WalletAnalysis(
-                    address=address,
-                    chain="unknown",
-                    balances=[],
-                    total_value_usd=0.0,
-                    daily_earnings=0.0,
-                    monthly_earnings=0.0,
-                    yearly_earnings=0.0,
-                    error_message=f"Could not identify blockchain for address {address}"
-                )
-
-            # Get wallet balance and delegations
-            wallet_balance = await self.get_wallet_balance(address, chain)
-            if not wallet_balance:
-                return WalletAnalysis(
-                    address=address,
-                    chain=chain,
-                    balances=[],
-                    total_value_usd=0.0,
-                    daily_earnings=0.0,
-                    monthly_earnings=0.0,
-                    yearly_earnings=0.0,
-                    error_message=f"Could not fetch data for {address}"
-                )
-
-            # Get cached price and APR
-            token_symbol = wallet_balance.token_symbol
-            price_usd = 0.0
-            apr = 15.0  # Default APR
-
-            # Get cached price
-            try:
-                from data_cache import get_cached_price, get_cached_apr
-                cached_price = get_cached_price(token_symbol)
-                if cached_price:
-                    price_usd = cached_price.price_usd
-                    logger.debug(f"Using cached price for {token_symbol}: ${price_usd}")
-
-                # Get cached APR
-                cached_apr = get_cached_apr(token_symbol)
-                if cached_apr:
-                    apr = cached_apr.apr
-                    logger.debug(f"Using cached APR for {token_symbol}: {apr}%")
-
-            except Exception as e:
-                logger.warning(f"Could not get cached data for {token_symbol}: {e}")
-
-            # Update delegations with APR
-            for delegation in wallet_balance.delegations:
-                delegation.apr = apr
-
-            # Calculate values
-            total_value_usd = wallet_balance.total_balance * price_usd
-            yearly_earnings = wallet_balance.delegated_balance * (apr / 100) * price_usd
-            daily_earnings = yearly_earnings / 365
-            monthly_earnings = yearly_earnings / 12
-
-            return WalletAnalysis(
-                address=address,
-                chain=chain,
-                balances=[wallet_balance],
-                total_value_usd=total_value_usd,
-                daily_earnings=daily_earnings,
-                monthly_earnings=monthly_earnings,
-                yearly_earnings=yearly_earnings
-            )
-
-        except Exception as e:
-            logger.error(f"Error analyzing address {address} with cache: {e}")
-            return WalletAnalysis(
-                address=address,
-                chain="error",
-                balances=[],
-                total_value_usd=0.0,
-                daily_earnings=0.0,
-                monthly_earnings=0.0,
-                yearly_earnings=0.0,
-                error_message=str(e)
-            )
 
     async def _analyze_single_address(self, address: str, price_fetcher=None, default_aprs: Dict[str, float] = None) -> Optional[WalletAnalysis]:
         """Analyze a single wallet address"""

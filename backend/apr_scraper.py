@@ -115,7 +115,7 @@ class APRScraper:
 
     def _get_cached_or_fallback(self, token: str) -> float:
         """
-        Get APR - NEVER FAILS
+        Get APR with fallback
         Priority: fresh cache > stale cache > config fallback (if skip_apr_scraping) > 0
         """
         # Try fresh cache
@@ -289,9 +289,9 @@ class APRScraper:
 
     async def get_multiple_aprs(self, tokens: List[str]) -> Dict[str, float]:
         """
-        Get APRs for multiple tokens - NEVER FAILS
-        Returns cached/fallback values if scraping fails
-        Uses global lock to ensure only ONE scraping operation at a time
+        Get APRs for multiple tokens
+        Returns cached/fallback values if scraping fails.
+        Uses global lock to ensure only one scraping operation at a time.
         """
         logger.info(f"Fetching APRs for {len(tokens)} tokens...")
 
