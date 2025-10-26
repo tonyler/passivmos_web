@@ -25,23 +25,12 @@ Passive income calculator for Cosmos ecosystem wallets.
 ./passivmos help        # See all commands
 ```
 
-See **[MANAGEMENT.md](MANAGEMENT.md)** for complete management guide.
-
-Opens at `http://localhost:8000`
-
 **Includes automatic background tasks:**
-- 💰 Price collection (every 5 minutes)
-- 📊 APR scraping from Keplr (every 5 minutes)
+- 💰 Price collection (every 10 minutes)
+- 📊 APR scraping from Keplr (every 10 minutes)
 
 No separate scripts needed!
 
-## Deploy Globally
-
-Want to make your app accessible from anywhere? See **[DEPLOYMENT.md](DEPLOYMENT.md)** for:
-- Running on a VPS with a public IP
-- Getting a free domain from [open-domains](https://github.com/open-domains/register)
-- Using Cloudflare Tunnel or ngrok for instant public access
-- Setting up as a system service for 24/7 operation
 
 ## Configuration
 
