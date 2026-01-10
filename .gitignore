@@ -16,10 +16,6 @@ env/
 ENV/
 .venv
 
-# User data - sessions contain wallet addresses
-sessions/*.json
-!sessions/.gitkeep
-
 # Cache data - may contain API responses
 data/cache/*.json
 backend/data/cache/*.json

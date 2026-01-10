@@ -4,3 +4,5 @@ aiohttp==3.9.1
 pydantic==2.5.3
 python-multipart==0.0.6
 bech32==1.2.0
+slowapi==0.1.8
+python-dotenv==1.0.1
