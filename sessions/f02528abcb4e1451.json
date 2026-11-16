@@ -1,6 +1,27 @@
 {
-  "code": "ashe",
-  "addresses": [],
+  "addresses": [
+    "cosmos1qnsxa5chxj87mvm9jxqnyr9pdlp324mp33pxuu",
+    "cosmos1n8wrmsa58765ck0phxq93etk3g0wtzwqzjgl2s",
+    "cosmos1z23gy5wmhmeq2v349hzfy7ndq9jfq3k05hpms7",
+    "cosmos159k45unpajxzmjttreggecy02ymte4perl9zmm",
+    "cosmos19c7rnyq3x62jyfym0zfp33hr9u4m8zwg0nwema",
+    "cosmos1e26kfsfww334jcj8w2ela9yhh4yuzwfm0takwd",
+    "0xBE5B7D2ECAF78621177928FFbceD13482d3E4058",
+    "0x92B87F2d1aF1B3AfD9be1dB2B13a00F34FA66829",
+    "0xFb38E0e5FC00c240127108Ad41f8a66281e7c06D",
+    "0xAE35eD3054A020B3302b9d06759D7590c6136CAe",
+    "0xAba0Ffc0991E9018Ac0edd00B25BC5f20ca7c60E",
+    "0x836B8D6617faE393a9762b55Dd00EF34C28C25a1",
+    "0x233eAbB93741d53C9376DABD1112b64f33aB559A",
+    "cosmos1ehgxjv8hz7y5kxq4zczfmlrjrpflghpjup6d0p",
+    "0x1a87472d0C66724A20bE61434a9e8bA14a2A3aC1",
+    "0xC8D6E110495b19E99D1b6F0D3e3595DdF7baDCE2",
+    "addr1q8u4pt34m0q5ex8szx9fnay2stnau07rwdxn9nkvrljsnp483hqxtue2ee9cx6hyt63c4mmrerfqfuz5uterg09fwjdssnjv0p",
+    "0x38acfB51424324009F0384D9393fD706Bae09120",
+    "cosmos13x2q9pcfgjec97wnry45mypeyzdeex6yqnez0m",
+    "0x20fC3CC7800673BF669f71C3092F2E91a138f5aa"
+  ],
   "created_at": "2026-01-10T16:21:59.471869",
-  "last_updated": "2026-01-10T16:21:59.471869"
+  "last_updated": "2026-11-13T05:22:03.421973",
+  "password_hash": "scrypt$46a0fe67e7f8f782ad4388d21a88c394$b11ae526b11ef441061b26598d8b6aefcf693524d06a1da923de07459803c9168f6c937cc1ef39f2c4bea2be5f83c100fe868f4485eeca04f41e6baabffb6913"
 }

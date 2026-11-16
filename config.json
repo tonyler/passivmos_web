@@ -32,7 +32,7 @@
       ],
       "keplr_url": "https://wallet.keplr.app/chains/osmosis",
       "ibc_denom": "uosmo",
-      "fallback_apr": 10.0,
+      "fallback_apr": 5.4,
       "color": "#5e12a0",
       "logo": "https://raw.githubusercontent.com/cosmos/chain-registry/master/osmosis/images/osmo.png"
     },
@@ -82,9 +82,10 @@
         "https://api.chihuahua.wtf",
         "https://chihuahua-rest.staketab.org"
       ],
-      "keplr_url": "https://wallet.keplr.app/chains/chihuahua",
+      "keplr_url": null,
+      "skip_apr_scraping": true,
       "ibc_denom": "ibc/B9E0A1A524E98BB407D3CED8720EFEFD186002F90C1B1B7964811DD0CCC12228",
-      "fallback_apr": 25.0,
+      "fallback_apr": 0.0,
       "color": "#343434",
       "logo": "https://raw.githubusercontent.com/cosmos/chain-registry/master/chihuahua/images/huahua.png"
     },
@@ -101,7 +102,8 @@
       ],
       "keplr_url": "https://wallet.keplr.app/chains/dymension",
       "ibc_denom": "ibc/9A76CDF0CBCEF37923F32518FA15E5DC92B9F56128292BC4D63C4AEA76CBB110",
-      "fallback_apr": 15.0,
+      "coingecko_id": "dymension",
+      "fallback_apr": 4.8,
       "color": "#f5f5f5",
       "logo": "https://raw.githubusercontent.com/cosmos/chain-registry/master/dymension/images/dymension-logo.png"
     },
@@ -117,10 +119,10 @@
         "https://saga-api.polkachu.com",
         "https://saga-rest.staketab.org"
       ],
-      "keplr_url": null,
-      "skip_apr_scraping": true,
+      "keplr_url": "https://wallet.keplr.app/chains/saga",
       "ibc_denom": "ibc/094FB70C3006906F67F5D674073D2DAFAFB41537E7033098F5C752F211E7B6C2",
-      "fallback_apr": 3.0,
+      "coingecko_id": "saga-2",
+      "fallback_apr": 0.0,
       "color": "#000000",
       "logo": "https://raw.githubusercontent.com/cosmos/chain-registry/master/saga/images/saga.png"
     },
@@ -138,7 +140,7 @@
       ],
       "keplr_url": "https://wallet.keplr.app/chains/nolus",
       "ibc_denom": "ibc/D9AFCECDD361D38302AA66EB3BAC23B95234832C51D12489DC451FA2B7C72782",
-      "fallback_apr": 15.0,
+      "fallback_apr": 3.9,
       "color": "#05120f",
       "logo": "https://raw.githubusercontent.com/cosmos/chain-registry/master/nolus/images/nolus.png"
     }

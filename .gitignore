@@ -41,6 +41,13 @@ Thumbs.db
 *.log
 logs/
 
+# User portfolio data and credentials
+sessions/*.json
+data/portfolios/*.json
+data/history/*.json
+data/purchases/*.json
+data/prices.json
+
 # Testing
 .pytest_cache/
 .coverage

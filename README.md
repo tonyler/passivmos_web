@@ -34,6 +34,16 @@ No separate scripts needed!
 
 ## Configuration
 
+## Security and deployment
+
+New accounts require a passphrase of at least 12 characters. After sign-in, the
+app uses an HttpOnly session cookie; keep the app behind HTTPS in production and
+set `SESSION_COOKIE_SECURE=true`. If the frontend is hosted on another origin,
+set `CORS_ORIGINS` to its exact HTTPS origin (or a comma-separated allowlist).
+
+Existing local sessions are migrated to password hashes on their next successful
+sign-in. Existing short codes should be replaced with a new account/passphrase.
+
 **Everything** is configured in `config.json`:
 
 ```json

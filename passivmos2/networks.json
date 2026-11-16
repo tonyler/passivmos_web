@@ -1,0 +1,109 @@
+{
+  "evm_chains": [
+    {"id": 1, "name": "Ethereum", "rpc": "https://ethereum.publicnode.com", "native_symbol": "ETH", "native_decimals": 18, "coingecko_id": "ethereum", "multicall_address": "0xcA11bde05977b3631167028862bE2a173976CA11"},
+    {"id": 56, "name": "BNB Chain", "rpc": "https://bsc-dataseed.binance.org", "native_symbol": "BNB", "native_decimals": 18, "coingecko_id": "binancecoin", "multicall_address": "0xcA11bde05977b3631167028862bE2a173976CA11"},
+    {"id": 137, "name": "Polygon", "rpc": "https://polygon-bor-rpc.publicnode.com", "native_symbol": "POL", "native_decimals": 18, "coingecko_id": "matic-network", "multicall_address": "0xcA11bde05977b3631167028862bE2a173976CA11"},
+    {"id": 42161, "name": "Arbitrum", "rpc": "https://arbitrum-one-rpc.publicnode.com", "native_symbol": "ETH", "native_decimals": 18, "coingecko_id": "ethereum", "multicall_address": "0xcA11bde05977b3631167028862bE2a173976CA11"},
+    {"id": 8453, "name": "Base", "rpc": "https://base-rpc.publicnode.com", "native_symbol": "ETH", "native_decimals": 18, "coingecko_id": "ethereum", "multicall_address": "0xcA11bde05977b3631167028862bE2a173976CA11"},
+    {"id": 130, "name": "Unichain", "rpc": "https://mainnet.unichain.org", "native_symbol": "ETH", "native_decimals": 18, "coingecko_id": "ethereum", "multicall_address": "0xcA11bde05977b3631167028862bE2a173976CA11"}
+  ],
+  "cosmos_chains": [
+    {"chain_id": "cosmoshub-4", "name": "Cosmos Hub", "prefix": "cosmos", "lcd": "https://rest.cosmos.directory/cosmoshub", "native_denom": "uatom", "native_decimals": 6, "native_symbol": "ATOM", "coingecko_id": "cosmos"},
+    {"chain_id": "osmosis-1", "name": "Osmosis", "prefix": "osmo", "lcd": "https://rest.cosmos.directory/osmosis", "native_denom": "uosmo", "native_decimals": 6, "native_symbol": "OSMO", "coingecko_id": "osmosis"},
+    {"chain_id": "juno-1", "name": "Juno", "prefix": "juno", "lcd": "https://rest.cosmos.directory/juno", "native_denom": "ujuno", "native_decimals": 6, "native_symbol": "JUNO", "coingecko_id": "juno-network"},
+    {"chain_id": "akashnet-2", "name": "Akash", "prefix": "akash", "lcd": "https://rest.cosmos.directory/akash", "native_denom": "uakt", "native_decimals": 6, "native_symbol": "AKT", "coingecko_id": "akash-network"},
+    {"chain_id": "secret-4", "name": "Secret Network", "prefix": "secret", "lcd": "https://rest.cosmos.directory/secretnetwork", "native_denom": "uscrt", "native_decimals": 6, "native_symbol": "SCRT", "coingecko_id": "secret"},
+    {"chain_id": "injective-1", "name": "Injective", "prefix": "inj", "lcd": "https://rest.cosmos.directory/injective", "native_denom": "inj", "native_decimals": 18, "native_symbol": "INJ", "coingecko_id": "injective-protocol"},
+    {"chain_id": "celestia", "name": "Celestia", "prefix": "celestia", "lcd": "https://rest.cosmos.directory/celestia", "native_denom": "utia", "native_decimals": 6, "native_symbol": "TIA", "coingecko_id": "celestia"},
+    {"chain_id": "dydx-mainnet-1", "name": "dYdX", "prefix": "dydx", "lcd": "https://rest.cosmos.directory/dydx", "native_denom": "adydx", "native_decimals": 18, "native_symbol": "DYDX", "coingecko_id": "dydx-chain"},
+    {"chain_id": "stride-1", "name": "Stride", "prefix": "stride", "lcd": "https://rest.cosmos.directory/stride", "native_denom": "ustrd", "native_decimals": 6, "native_symbol": "STRD", "coingecko_id": "stride"},
+    {"chain_id": "neutron-1", "name": "Neutron", "prefix": "neutron", "lcd": "https://rest.cosmos.directory/neutron", "native_denom": "untrn", "native_decimals": 6, "native_symbol": "NTRN", "coingecko_id": "neutron-3"},
+    {"chain_id": "noble-1", "name": "Noble", "prefix": "noble", "lcd": "https://rest.cosmos.directory/noble", "native_denom": "ustake", "native_decimals": 6, "native_symbol": "NOBLE", "coingecko_id": "noble"},
+    {"chain_id": "chihuahua-1", "name": "Chihuahua", "prefix": "chihuahua", "lcd": "https://rest.cosmos.directory/chihuahua", "native_denom": "uhuahua", "native_decimals": 6, "native_symbol": "HUAHUA", "coingecko_id": "chihuahua-token"},
+    {"chain_id": "sommelier-3", "name": "Sommelier", "prefix": "somm", "lcd": "https://rest.cosmos.directory/sommelier", "native_denom": "usomm", "native_decimals": 6, "native_symbol": "SOMM", "coingecko_id": "sommelier"},
+    {"chain_id": "pirin-1", "name": "Nolus", "prefix": "nolus", "lcd": "https://rest.cosmos.directory/nolus", "native_denom": "unls", "native_decimals": 6, "native_symbol": "NLS", "coingecko_id": "nolus"},
+    {"chain_id": "ssc-1", "name": "Saga", "prefix": "saga", "lcd": "https://rest.cosmos.directory/saga", "native_denom": "uSAGA", "native_decimals": 6, "native_symbol": "SAGA", "coingecko_id": "saga-2"}
+  ],
+  "cosmos_chains_disabled": [
+    {"chain_id": "stargaze-1", "name": "Stargaze", "prefix": "stars", "lcd": "https://rest.cosmos.directory/stargaze", "native_denom": "ustars", "native_decimals": 6, "coingecko_id": "stargaze"},
+    {"chain_id": "fetchhub-4", "name": "Fetch.ai", "prefix": "fetch", "lcd": "https://rest.cosmos.directory/fetchhub", "native_denom": "afet", "native_decimals": 18, "coingecko_id": "fetch-ai"},
+    {"chain_id": "kaiyo-1", "name": "Kujira", "prefix": "kujira", "lcd": "https://rest.cosmos.directory/kujira", "native_denom": "ukuji", "native_decimals": 6, "coingecko_id": "kujira"},
+    {"chain_id": "phoenix-1", "name": "Terra", "prefix": "terra", "lcd": "https://rest.cosmos.directory/terra2", "native_denom": "uluna", "native_decimals": 6, "coingecko_id": "terra-luna-2"},
+    {"chain_id": "axelar-dojo-1", "name": "Axelar", "prefix": "axelar", "lcd": "https://rest.cosmos.directory/axelar", "native_denom": "uaxl", "native_decimals": 6, "coingecko_id": "axelar"},
+    {"chain_id": "evmos_9001-2", "name": "Evmos", "prefix": "evmos", "lcd": "https://rest.cosmos.directory/evmos", "native_denom": "aevmos", "native_decimals": 18, "coingecko_id": "evmos"},
+    {"chain_id": "gravity-bridge-3", "name": "Gravity Bridge", "prefix": "gravity", "lcd": "https://rest.cosmos.directory/gravitybridge", "native_denom": "ugraviton", "native_decimals": 6, "coingecko_id": "graviton"},
+    {"chain_id": "core-1", "name": "Persistence", "prefix": "persistence", "lcd": "https://rest.cosmos.directory/persistence", "native_denom": "uxprt", "native_decimals": 6, "coingecko_id": "persistence"},
+    {"chain_id": "quicksilver-2", "name": "Quicksilver", "prefix": "quick", "lcd": "https://rest.cosmos.directory/quicksilver", "native_denom": "uqck", "native_decimals": 6, "coingecko_id": "quicksilver"},
+    {"chain_id": "carbon-1", "name": "Carbon", "prefix": "swth", "lcd": "https://rest.cosmos.directory/carbon", "native_denom": "swth", "native_decimals": 8, "coingecko_id": "switcheo"},
+    {"chain_id": "comdex-1", "name": "Comdex", "prefix": "comdex", "lcd": "https://rest.cosmos.directory/comdex", "native_denom": "ucmdx", "native_decimals": 6, "coingecko_id": "comdex"},
+    {"chain_id": "omniflixhub-1", "name": "OmniFlix", "prefix": "omniflix", "lcd": "https://rest.cosmos.directory/omniflixhub", "native_denom": "uflix", "native_decimals": 6, "coingecko_id": "omniflix-network"},
+    {"chain_id": "regen-1", "name": "Regen Network", "prefix": "regen", "lcd": "https://rest.cosmos.directory/regen", "native_denom": "uregen", "native_decimals": 6, "coingecko_id": "regen"},
+    {"chain_id": "sentinelhub-2", "name": "Sentinel", "prefix": "sent", "lcd": "https://rest.cosmos.directory/sentinel", "native_denom": "udvpn", "native_decimals": 6, "coingecko_id": "sentinel"},
+    {"chain_id": "desmos-mainnet", "name": "Desmos", "prefix": "desmos", "lcd": "https://rest.cosmos.directory/desmos", "native_denom": "udsm", "native_decimals": 6, "coingecko_id": "desmos"},
+    {"chain_id": "bitcanna-1", "name": "BitCanna", "prefix": "bcna", "lcd": "https://rest.cosmos.directory/bitcanna", "native_denom": "ubcna", "native_decimals": 6, "coingecko_id": "bitcanna"},
+    {"chain_id": "lum-network-1", "name": "Lum Network", "prefix": "lum", "lcd": "https://rest.cosmos.directory/lumnetwork", "native_denom": "ulum", "native_decimals": 6, "coingecko_id": "lum-network"}
+  ],
+  "erc20_tokens": {
+    "1": [
+      {"address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", "symbol": "USDC", "decimals": 6, "coingecko_id": "usd-coin"},
+      {"address": "0xdAC17F958D2ee523a2206206994597C13D831ec7", "symbol": "USDT", "decimals": 6, "coingecko_id": "tether"},
+      {"address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", "symbol": "WETH", "decimals": 18, "coingecko_id": "weth"},
+      {"address": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", "symbol": "WBTC", "decimals": 8, "coingecko_id": "wrapped-bitcoin"},
+      {"address": "0x6B175474E89094C44Da98b954EeEeb4A136be179", "symbol": "DAI", "decimals": 18, "coingecko_id": "dai"},
+      {"address": "0x514910771AF9Ca656af840dff83E8264EcF986CA", "symbol": "LINK", "decimals": 18, "coingecko_id": "chainlink"},
+      {"address": "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", "symbol": "UNI", "decimals": 18, "coingecko_id": "uniswap"},
+      {"address": "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", "symbol": "AAVE", "decimals": 18, "coingecko_id": "aave"},
+      {"address": "0xfAbA6f8e4a5E8Ab82F62fe7C39859FA577269BE3", "symbol": "ONDO", "decimals": 18, "coingecko_id": "ondo-finance"},
+      {"address": "0xD533a949740bb3306d119CC777fa900bA034cd52", "symbol": "CRV", "decimals": 18, "coingecko_id": "curve-dao-token"},
+      {"address": "0xc00e94Cb662C3520282E6f5717214004A7f26888", "symbol": "COMP", "decimals": 18, "coingecko_id": "compound-governance-token"},
+      {"address": "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2", "symbol": "MKR", "decimals": 18, "coingecko_id": "maker"},
+      {"address": "0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32", "symbol": "LDO", "decimals": 18, "coingecko_id": "lido-dao"},
+      {"address": "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84", "symbol": "stETH", "decimals": 18, "coingecko_id": "staked-ether"},
+      {"address": "0xBe9895146f7AF43049ca1c1AE358B0541Ea49704", "symbol": "cbETH", "decimals": 18, "coingecko_id": "coinbase-wrapped-staked-eth"}
+    ],
+    "56": [
+      {"address": "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82", "symbol": "CAKE", "decimals": 18, "coingecko_id": "pancakeswap-token"},
+      {"address": "0x55d398326f99059fF775485246999027B3197955", "symbol": "USDT", "decimals": 18, "coingecko_id": "tether"},
+      {"address": "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d", "symbol": "USDC", "decimals": 18, "coingecko_id": "usd-coin"},
+      {"address": "0x2170Ed0880ac9A755fd29B2688956BD959F933F8", "symbol": "ETH", "decimals": 18, "coingecko_id": "ethereum"},
+      {"address": "0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c", "symbol": "BTCB", "decimals": 18, "coingecko_id": "bitcoin"},
+      {"address": "0xba2ae424d960c26247dd6c32edc70b295c744c43", "symbol": "DOGE", "decimals": 8, "coingecko_id": "dogecoin"}
+    ],
+    "137": [
+      {"address": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", "symbol": "USDC.e", "decimals": 6, "coingecko_id": "usd-coin"},
+      {"address": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", "symbol": "USDC", "decimals": 6, "coingecko_id": "usd-coin"},
+      {"address": "0xc2132D05D31c914a87C6611C10748AEb04B58e8F", "symbol": "USDT", "decimals": 6, "coingecko_id": "tether"},
+      {"address": "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6", "symbol": "WBTC", "decimals": 8, "coingecko_id": "wrapped-bitcoin"},
+      {"address": "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619", "symbol": "WETH", "decimals": 18, "coingecko_id": "ethereum"},
+      {"address": "0xb33EaAd8d922B1083446DC23f610c2567fB5180f", "symbol": "UNI", "decimals": 18, "coingecko_id": "uniswap"},
+      {"address": "0xD6DF932A45C0f255f85145f286eA0b292B21C90B", "symbol": "AAVE", "decimals": 18, "coingecko_id": "aave"}
+    ],
+    "42161": [
+      {"address": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", "symbol": "USDC", "decimals": 6, "coingecko_id": "usd-coin"},
+      {"address": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9", "symbol": "USDT", "decimals": 6, "coingecko_id": "tether"},
+      {"address": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1", "symbol": "WETH", "decimals": 18, "coingecko_id": "ethereum"},
+      {"address": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f", "symbol": "WBTC", "decimals": 8, "coingecko_id": "wrapped-bitcoin"},
+      {"address": "0xfa7F8980b0f1E64A2062791cc3b0871572f1F7f0", "symbol": "UNI", "decimals": 18, "coingecko_id": "uniswap"},
+      {"address": "0xba5DdD1f9d7F570dc94a51479a000E3BCE967196", "symbol": "AAVE", "decimals": 18, "coingecko_id": "aave"},
+      {"address": "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1", "symbol": "DAI", "decimals": 18, "coingecko_id": "dai"},
+      {"address": "0xf97f4df75117a78c1A5a0DBb814Af92458539FB4", "symbol": "LINK", "decimals": 18, "coingecko_id": "chainlink"}
+    ],
+    "8453": [
+      {"address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", "symbol": "USDC", "decimals": 6, "coingecko_id": "usd-coin"},
+      {"address": "0x4200000000000000000000000000000000000006", "symbol": "WETH", "decimals": 18, "coingecko_id": "ethereum"},
+      {"address": "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb", "symbol": "DAI", "decimals": 18, "coingecko_id": "dai"},
+      {"address": "0x940181a94A35A4569E4529A3CDfB74e38FD98631", "symbol": "AERO", "decimals": 18, "coingecko_id": "aerodrome-finance"},
+      {"address": "0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22", "symbol": "cbETH", "decimals": 18, "coingecko_id": "coinbase-wrapped-staked-eth"}
+    ],
+    "130": [
+      {"address": "0x4200000000000000000000000000000000000006", "symbol": "WETH", "decimals": 18, "coingecko_id": "weth"},
+      {"address": "0x078D782b760474a361dDA0AF3839290b0EF57AD6", "symbol": "USDC", "decimals": 6, "coingecko_id": "usd-coin"},
+      {"address": "0x588CE4F028D8e7B53B687865d6A67b3A54C75518", "symbol": "USDT", "decimals": 6, "coingecko_id": "tether"},
+      {"address": "0x8f187aA05619a017077f5308904739877CE9eA21", "symbol": "UNI", "decimals": 18, "coingecko_id": "uniswap"},
+      {"address": "0x927B51f251480a681271180dA4DE28D44EC4afb8", "symbol": "WBTC", "decimals": 8, "coingecko_id": "wrapped-bitcoin"},
+      {"address": "0x20CAb320A855b39F724131C69424240519573f81", "symbol": "DAI", "decimals": 18, "coingecko_id": "dai"},
+      {"address": "0xeF66491EaB4bBb582c57b14778AFD8dFb70D8a1A", "symbol": "LINK", "decimals": 18, "coingecko_id": "chainlink"},
+      {"address": "0x9151434b16b9763660705744891fA906F660EcC5", "symbol": "USDT0", "decimals": 6, "coingecko_id": "tether"}
+    ]
+  }
+}

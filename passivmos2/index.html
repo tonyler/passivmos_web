@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="/passivmos2/favicon.png" />
+    <meta name="viewport" content="width=620" />
+    <link href="/passivmos2/_app/immutable/entry/start.DiIB0uw4.js" rel="modulepreload">
+		<link href="/passivmos2/_app/immutable/chunks/DFm8fYTn.js" rel="modulepreload">
+		<link href="/passivmos2/_app/immutable/chunks/DQpt-5eo.js" rel="modulepreload">
+		<link href="/passivmos2/_app/immutable/chunks/CKfFgIhh.js" rel="modulepreload">
+		<link href="/passivmos2/_app/immutable/chunks/CFIezs4_.js" rel="modulepreload">
+		<link href="/passivmos2/_app/immutable/entry/app.C-RQuNrQ.js" rel="modulepreload">
+		<link href="/passivmos2/_app/immutable/chunks/CC92eE3E.js" rel="modulepreload">
+		<link href="/passivmos2/_app/immutable/chunks/DlXHrf7l.js" rel="modulepreload">
+		<link href="/passivmos2/_app/immutable/chunks/BMnudmso.js" rel="modulepreload">
+		<link href="/passivmos2/_app/immutable/chunks/B_0PXsH0.js" rel="modulepreload">
+		<link href="/passivmos2/_app/immutable/nodes/0.Cbu7JGZi.js" rel="modulepreload">
+		
+  <script>
+  (function(){
+    let _hist=null;
+    let dragging=false;
+
+    // Capture history API responses
+    const _fetch=window.fetch;
+    window.fetch=function(...a){
+      const p=_fetch.apply(this,a);
+      if(a[0]&&String(a[0]).includes('/api/coinfolio/history'))
+        p.then(r=>r.clone().json().then(d=>{_hist=d;})).catch(()=>{});
+      return p;
+    };
+
+    // Create single floating tooltip
+    const tip=document.createElement('div');
+    tip.style.cssText='position:fixed;display:none;background:#111;color:#fff;'+
+      'font:12px/1.6 monospace;padding:8px 12px;border:1px solid #555;'+
+      'pointer-events:none;z-index:99999;white-space:nowrap;';
+    if(document.body)document.body.appendChild(tip);
+    else document.addEventListener('DOMContentLoaded',()=>document.body.appendChild(tip),{once:true});
+
+    function dataForKey(key){
+      // ponytail: ratio mapping replaces count-matching; move into Svelte chart component when source is available
+      if(!_hist)return null;
+      const f=_hist.filter(d=>d[key]!=null);
+      return f.length?f:null;
+    }
+
+    function parsePolyPoints(svg){
+      const poly=svg.querySelector('polyline');
+      if(!poly)return[];
+      return(poly.getAttribute('points')||'').trim().split(/\s+/)
+        .filter(Boolean).map(s=>{const[x,y]=s.split(',').map(Number);return{x,y};});
+    }
+
+    function setupSvg(svg,key,label){
+      if(svg._tt)return;
+      svg._tt=true;
+      const ns='http://www.w3.org/2000/svg';
+      const ov=document.createElementNS(ns,'rect');
+      ov.setAttribute('x','0');ov.setAttribute('y','0');
+      ov.setAttribute('width','1000');ov.setAttribute('height','90');
+      ov.setAttribute('fill','transparent');
+      ov.style.cursor='crosshair';
+      svg.appendChild(ov);
+
+      function inspect(e){
+        const data=dataForKey(key);
+        if(!data||data.length<2)return;
+        const pts=parsePolyPoints(svg);
+        if(!pts.length)return;
+        const rect=svg.getBoundingClientRect();
+        const svgX=(e.clientX-rect.left)/rect.width*1000;
+        let bi=0,bd=Infinity;
+        pts.forEach((p,i)=>{const d=Math.abs(p.x-svgX);if(d<bd){bd=d;bi=i;}});
+        // Map polyline point index to data index by ratio (robust to any filtering the chart applies)
+        const di=Math.round(bi/Math.max(pts.length-1,1)*(data.length-1));
+        const entry=data[Math.min(di,data.length-1)];
+        if(!entry)return;
+        const dt=new Date(entry.ts*1000);
+        const ds=dt.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+        const ts=dt.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+        const val=entry[key].toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+        tip.innerHTML='<div style="color:#aaa;font-size:10px;">'+label+'</div>'+
+          '<div style="color:#7af;">'+ds+' '+ts+'</div>'+
+          '<div style="font-size:14px;font-weight:bold;">$'+val+'</div>';
+        let lx=e.clientX+16;
+        if(lx+220>window.innerWidth)lx=e.clientX-236;
+        tip.style.left=lx+'px';
+        tip.style.top=(e.clientY-10)+'px';
+        tip.style.display='block';
+      }
+      ov.addEventListener('pointerdown',e=>{dragging=true;ov.setPointerCapture(e.pointerId);inspect(e);});
+      ov.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'||dragging)inspect(e);});
+      ov.addEventListener('pointerup',e=>{dragging=false;try{ov.releasePointerCapture(e.pointerId)}catch(_){}});
+      ov.addEventListener('pointercancel',()=>{dragging=false;tip.style.display='none';});
+      ov.addEventListener('pointerleave',()=>{if(!dragging)tip.style.display='none';});
+      ov.style.touchAction='none';
+    }
+
+    let chartHome=null, chartPlaceholder=null;
+    const modal=document.createElement('div');
+    modal.className='cf-chart-modal';
+    modal.innerHTML='<div class="cf-chart-window"><div class="cf-chart-title">▣ CHARTS <span>PORTFOLIO INTELLIGENCE</span><button type="button" aria-label="Close charts">✕ Close</button></div><div class="cf-chart-content"></div><div class="cf-chart-help">Drag across either chart to inspect the exact timestamp and value · Esc closes</div></div>';
+    if(document.body)document.body.appendChild(modal);
+    else document.addEventListener('DOMContentLoaded',()=>document.body.appendChild(modal),{once:true});
+    const modalContent=modal.querySelector('.cf-chart-content');
+    function closeCharts(){
+      if(chartHome&&chartPlaceholder){chartPlaceholder.replaceWith(chartHome);}
+      chartHome=null; chartPlaceholder=null; modal.classList.remove('open'); document.body.classList.remove('cf-charts-open'); document.body.style.overflow=''; tip.style.display='none';
+    }
+    function openCharts(){
+      const charts=document.querySelector('.charts-row');
+      if(!charts||modal.classList.contains('open'))return;
+      chartHome=charts; chartPlaceholder=document.createComment('charts-home'); charts.parentNode.insertBefore(chartPlaceholder,charts);
+      modalContent.appendChild(charts); modal.classList.add('open'); document.body.classList.add('cf-charts-open'); document.body.style.overflow='hidden';
+    }
+    modal.querySelector('button').addEventListener('click',closeCharts);
+    modal.addEventListener('click',e=>{if(e.target===modal)closeCharts();});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape')closeCharts();});
+
+    const style=document.createElement('style');
+    style.textContent=`
+      .cf-chart-modal{display:none;position:fixed;inset:0;z-index:99990;background:rgba(0,20,32,.78);padding:18px;overflow:auto}
+      .cf-chart-modal.open{display:block}.cf-chart-window{min-height:calc(100vh - 36px);background:#c0c0c0;border:2px solid #fff;box-shadow:inset -2px -2px #404040,inset 2px 2px #dfdfdf,0 18px 50px #000;padding:3px}
+      .cf-chart-title{height:32px;background:linear-gradient(90deg,#004f9e,#1684d4);color:#fff;font:700 14px Tahoma,sans-serif;display:flex;align-items:center;padding:0 10px;gap:10px}.cf-chart-title span{opacity:.72;font-size:10px;letter-spacing:.12em}.cf-chart-title button{margin-left:auto;background:#c0c0c0;border:2px outset #eee;color:#111;font:700 11px Tahoma;padding:4px 9px;cursor:pointer}
+      .cf-chart-content{padding:22px;min-height:calc(100vh - 118px);background:#e7e7e7}.cf-chart-content .charts-row{display:grid!important;grid-template-columns:1fr!important;gap:22px!important;max-width:1500px;margin:auto}.cf-chart-content .chart-panel{min-height:42vh}.cf-chart-content svg.chart-svg{width:100%!important;height:clamp(280px,38vh,500px)!important}.cf-chart-help{background:#e8e8e8;border-top:1px solid #808080;padding:7px 10px;font:11px Tahoma,sans-serif;color:#333}
+      body:not(.cf-charts-open) .charts-row{display:none!important}.cf-chart-modal.open .charts-row{display:grid!important}
+      .chart-launcher{cursor:pointer;user-select:none}.chart-launcher:hover{filter:brightness(1.1)}
+      @media(max-width:700px){.cf-chart-modal{padding:6px}.cf-chart-content{padding:10px}.cf-chart-title span{display:none}.cf-chart-content .chart-panel{min-height:38vh}}
+    `;
+    document.head.appendChild(style);
+
+    function addChartsButton(){
+      const bar=document.querySelector('.taskbar');
+      if(!bar||bar.querySelector('.chart-launcher'))return;
+      const button=document.createElement('div'); button.className='taskbar-item chart-launcher'; button.textContent='▣ Charts'; button.title='Open charts full screen'; button.addEventListener('click',openCharts);
+      const active=bar.querySelector('.taskbar-item.active');
+      if(active)active.insertAdjacentElement('afterend',button);else bar.appendChild(button);
+    }
+
+    function attach(){
+      const svgs=document.querySelectorAll('svg.chart-svg');
+      if(svgs[0])setupSvg(svgs[0],'total_usd','Portfolio Value');
+      if(svgs[1])setupSvg(svgs[1],'yearly_income_usd','Yearly Income');
+      addChartsButton();
+    }
+
+    new MutationObserver(attach).observe(document.documentElement,{childList:true,subtree:true});
+    document.addEventListener('DOMContentLoaded',attach);
+  })();
+  </script>
+  </head>
+  <body data-sveltekit-preload-data="hover">
+    <div style="display: contents">
+			<script>
+				{
+					__sveltekit_da06r8 = {
+						base: "/passivmos2",
+						assets: "/passivmos2"
+					};
+
+					const element = document.currentScript.parentElement;
+
+					Promise.all([
+						import("/passivmos2/_app/immutable/entry/start.DiIB0uw4.js"),
+						import("/passivmos2/_app/immutable/entry/app.C-RQuNrQ.js")
+					]).then(([kit, app]) => {
+						kit.start(app, element);
+					});
+				}
+			</script>
+		</div>
+
+  <!-- ═══════════════════════════════════════════════════
+       CLIPPY — Office Assistant
+       ═══════════════════════════════════════════════════ -->
+  <script>
+  // ponytail: single place that knows about .scan-btn; move into Svelte component
+  // (dispatch 'passivmos:scan' there, remove this block) when source is available
+  window.__passivmos = {
+    scan: function() {
+      var s = document.querySelector('.scan-btn:not([disabled])');
+      if (s) s.click();
+    }
+  };
+  </script>
+  <script>
+  (function(){
+    'use strict';
+
+    var SPRITE_URL = '/passivmos2/Clippy.png';
+    var DISP = 96;
+    var PROC_SCALE = 0.4;
+
+    var MSGS = [
+      { t: "It looks like you're tracking a crypto portfolio!<br>Would you like help with that?",   b: ["Yes please!", "No thanks"] },
+      { t: "It looks like you might want to refresh your data.<br>Want me to trigger a scan?",       b: ["Scan Now!", "I'm fine"]   },
+      { t: "Did you know you can <b>sort columns</b> by clicking<br>the table headers? Very handy!", b: ["Cool!", "Go away"]        },
+      { t: "Tip: Add multiple wallet addresses to track<br>all your holdings in one place!",         b: ["Thanks!", "Got it"]       },
+      { t: "The crypto market never sleeps!<br>But you probably should. Just saying.",               b: ["Ha!", "Dismiss"]          },
+      { t: "It looks like you're doing well!<br>Don't forget to take profits occasionally.",         b: ["Good advice", "Mind your business"] },
+      { t: "It looks like you clicked me!<br>I'm here to help… or just hang out.",                  b: ["Hi Clippy!", "Bye"]       },
+    ];
+
+    var ANIM = {
+      idle:    { row: 0, fps: 3  },
+      wave:    { row: 1, fps: 10 },
+      excited: { row: 2, fps: 12 },
+      exit:    { row: 4, fps: 10 },
+    };
+
+    // ── State ─────────────────────────────────────────────────────
+    var wrap, canvas, dCtx, bubble, textEl, btnsEl;
+    var animTimer = null, showTimer = null;
+    var isVisible = false, colFrame = 0;
+    // Set after image load & processing:
+    var offscreen = null; // HTMLCanvasElement with magenta stripped
+    var colBounds = [];   // [{start,end,size}] per frame column
+    var rowBounds = [];   // [{start,end,size}] per frame row
+
+    // ── CSS ───────────────────────────────────────────────────────
+    var css = document.createElement('style');
+    css.textContent =
+      '#clippy-wrap{position:fixed;right:28px;bottom:-200px;z-index:2147483647;' +
+        'display:flex;flex-direction:column;align-items:center;' +
+        'font-family:"Courier New",monospace;pointer-events:auto;' +
+        'transition:bottom .55s cubic-bezier(.34,1.56,.64,1);}' +
+      '#clippy-canvas{width:'+DISP+'px;height:'+DISP+'px;cursor:pointer;flex-shrink:0;' +
+        'image-rendering:auto;}' +
+      '#clippy-bubble{display:none;position:relative;background:#ffffc0;' +
+        'border-top:2px solid #fff;border-left:2px solid #fff;' +
+        'border-right:2px solid #404040;border-bottom:2px solid #404040;' +
+        'padding:10px 24px 10px 10px;margin-bottom:10px;width:215px;' +
+        'font-size:11px;line-height:1.6;color:#000;' +
+        'box-shadow:3px 3px 0 rgba(0,0,0,.3);}' +
+      '#clippy-bubble::after{content:"";position:absolute;bottom:-11px;' +
+        'left:50%;transform:translateX(-50%);' +
+        'border-left:9px solid transparent;border-right:9px solid transparent;' +
+        'border-top:11px solid #404040;}' +
+      '#clippy-bubble::before{content:"";position:absolute;bottom:-8px;z-index:1;' +
+        'left:50%;transform:translateX(-50%);' +
+        'border-left:7px solid transparent;border-right:7px solid transparent;' +
+        'border-top:9px solid #ffffc0;}' +
+      '.cy-x{position:absolute;top:3px;right:3px;width:16px;height:14px;' +
+        'background:silver;border-top:1px solid #fff;border-left:1px solid #fff;' +
+        'border-right:1px solid #404040;border-bottom:1px solid #404040;' +
+        'font-size:9px;cursor:pointer;display:flex;align-items:center;' +
+        'justify-content:center;padding:0;line-height:1;color:#000;}' +
+      '.cy-x:active{border-color:#404040 #fff #fff #404040;}' +
+      '#clippy-text{margin-bottom:7px;}' +
+      '#clippy-btns{display:flex;gap:4px;justify-content:flex-end;flex-wrap:wrap;}' +
+      '.cy-btn{font-family:"Courier New",monospace;font-size:11px;padding:2px 9px;' +
+        'background:silver;color:#000;border-top:2px solid #fff;border-left:2px solid #fff;' +
+        'border-right:2px solid #404040;border-bottom:2px solid #404040;' +
+        'cursor:pointer;white-space:nowrap;}' +
+      '.cy-btn:active{border-color:#404040 #404040 #fff #fff;}';
+    document.head.appendChild(css);
+
+    // ── Helpers ───────────────────────────────────────────────────
+    function isMag(r, g, b) { return r > 200 && g < 60 && b > 200; }
+
+    // Find runs of indices where density >= threshold
+    function findRuns(density, threshold) {
+      var runs = [], inRun = false, rs = 0;
+      for (var i = 0; i < density.length; i++) {
+        if (!inRun && density[i] >= threshold) { inRun = true; rs = i; }
+        else if (inRun && density[i] < threshold) { runs.push({start:rs, end:i-1}); inRun = false; }
+      }
+      if (inRun) runs.push({start:rs, end:density.length-1});
+      return runs;
+    }
+
+    // Convert separator runs → frame boundary rects
+    function boundsFromSeps(seps, total) {
+      var bounds = [], prev = 0;
+      for (var i = 0; i < seps.length; i++) {
+        if (seps[i].start > prev) bounds.push({start:prev, end:seps[i].start-1, size:seps[i].start-prev});
+        prev = seps[i].end + 1;
+      }
+      if (prev < total) bounds.push({start:prev, end:total-1, size:total-prev});
+      return bounds;
+    }
+
+    // ── Load, detect grid, strip magenta ─────────────────────────
+    function loadSprite(cb) {
+      var img = new Image();
+      img.onload = function() {
+        try {
+          var IW = img.naturalWidth, IH = img.naturalHeight;
+          var W = Math.round(IW * PROC_SCALE);
+          var H = Math.round(IH * PROC_SCALE);
+          var c = document.createElement('canvas');
+          c.width = W; c.height = H;
+          var ctx = c.getContext('2d');
+          ctx.drawImage(img, 0, 0, W, H);
+          var id = ctx.getImageData(0, 0, W, H);
+          var d = id.data;
+
+          // Sample 20 evenly-spaced rows to get per-column magenta density
+          var colDen = new Float32Array(W);
+          var sY = [], i;
+          for (i = 0; i < 20; i++) sY.push(Math.floor(i * H / 20));
+          for (var x = 0; x < W; x++) {
+            var hit = 0;
+            for (i = 0; i < sY.length; i++) {
+              var p = (sY[i] * W + x) * 4;
+              if (isMag(d[p], d[p+1], d[p+2])) hit++;
+            }
+            colDen[x] = hit / sY.length;
+          }
+
+          // Sample 20 evenly-spaced cols to get per-row magenta density
+          var rowDen = new Float32Array(H);
+          var sX = [];
+          for (i = 0; i < 20; i++) sX.push(Math.floor(i * W / 20));
+          for (var y = 0; y < H; y++) {
+            var hit = 0;
+            for (i = 0; i < sX.length; i++) {
+              var p = (y * W + sX[i]) * 4;
+              if (isMag(d[p], d[p+1], d[p+2])) hit++;
+            }
+            rowDen[y] = hit / sX.length;
+          }
+
+          var cSeps = findRuns(colDen, 0.95);
+          var rSeps = findRuns(rowDen, 0.95);
+          colBounds = boundsFromSeps(cSeps, W);
+          rowBounds = boundsFromSeps(rSeps, H);
+
+          // Strip magenta alpha
+          for (i = 0; i < d.length; i += 4) {
+            if (isMag(d[i], d[i+1], d[i+2])) d[i+3] = 0;
+          }
+          ctx.putImageData(id, 0, 0);
+          offscreen = c;
+
+
+        } catch(e) {
+          console.warn('[Clippy] sprite processing failed:', e);
+        }
+        cb();
+      };
+      img.onerror = function() { cb(); };
+      img.src = SPRITE_URL;
+    }
+
+    // ── Frame drawing ─────────────────────────────────────────────
+    function drawFrame(row, col) {
+      if (!dCtx) return;
+      dCtx.clearRect(0, 0, DISP, DISP);
+      if (!offscreen || !colBounds[col] || !rowBounds[row]) return;
+      var cb = colBounds[col], rb = rowBounds[row];
+      dCtx.drawImage(offscreen, cb.start, rb.start, cb.size, rb.size, 0, 0, DISP, DISP);
+    }
+
+    // ── Animation ─────────────────────────────────────────────────
+    function startAnim(name) {
+      if (animTimer) { clearTimeout(animTimer); animTimer = null; }
+      var a = ANIM[name] || ANIM.idle;
+      var numCols = colBounds.length || 14;
+      colFrame = 0;
+      (function tick() {
+        drawFrame(a.row, colFrame % numCols);
+        colFrame++;
+        animTimer = setTimeout(tick, Math.round(1000 / a.fps));
+      })();
+    }
+
+    // ── Build DOM ─────────────────────────────────────────────────
+    function buildUI() {
+      wrap   = document.createElement('div'); wrap.id = 'clippy-wrap';
+      bubble = document.createElement('div'); bubble.id = 'clippy-bubble';
+      textEl = document.createElement('div'); textEl.id = 'clippy-text';
+      btnsEl = document.createElement('div'); btnsEl.id = 'clippy-btns';
+
+      var xBtn = document.createElement('button');
+      xBtn.className = 'cy-x'; xBtn.textContent = '✕'; xBtn.title = 'Close';
+      xBtn.addEventListener('click', dismiss);
+      bubble.appendChild(xBtn);
+      bubble.appendChild(textEl);
+      bubble.appendChild(btnsEl);
+
+      // Canvas for sprite rendering (pixel-perfect, no CSS background tricks)
+      canvas = document.createElement('canvas');
+      canvas.id = 'clippy-canvas';
+      canvas.width = DISP; canvas.height = DISP;
+      canvas.title = 'Click Clippy!';
+      dCtx = canvas.getContext('2d');
+      canvas.addEventListener('click', function() {
+        if (bubble.style.display === 'block') { dismiss(); }
+        else { showMsg(MSGS[Math.floor(Math.random() * MSGS.length)]); }
+      });
+
+      wrap.appendChild(bubble);
+      wrap.appendChild(canvas);
+      document.documentElement.appendChild(wrap);
+
+      startAnim('idle');
+    }
+
+    // ── Messages ──────────────────────────────────────────────────
+    function showMsg(msg) {
+      textEl.innerHTML = msg.t;
+      btnsEl.innerHTML = '';
+      msg.b.forEach(function(label) {
+        var b = document.createElement('button');
+        b.className = 'cy-btn'; b.textContent = label;
+        b.addEventListener('click', function() {
+          if (label === 'Scan Now!') {
+            window.__passivmos.scan();
+          }
+          dismiss();
+        });
+        btnsEl.appendChild(b);
+      });
+      bubble.style.display = 'block';
+      startAnim('excited');
+    }
+
+    // ── Appear / dismiss ──────────────────────────────────────────
+    function appear() {
+      if (isVisible) return;
+      isVisible = true;
+      startAnim('wave');
+      wrap.style.bottom = '20px';
+      setTimeout(function() { showMsg(MSGS[Math.floor(Math.random() * MSGS.length)]); }, 700);
+    }
+
+    function dismiss() {
+      bubble.style.display = 'none';
+      startAnim('exit');
+      setTimeout(function() {
+        wrap.style.bottom = '-200px';
+        isVisible = false;
+        setTimeout(function() { startAnim('idle'); scheduleNext(); }, 600);
+      }, 800);
+    }
+
+    function scheduleNext() {
+      clearTimeout(showTimer);
+      showTimer = setTimeout(appear, 120000 + Math.random() * 120000);
+    }
+
+    // ── Boot ──────────────────────────────────────────────────────
+    function boot() {
+      loadSprite(function() {
+        buildUI();
+        showTimer = setTimeout(appear, 5000 + Math.random() * 4000);
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', boot);
+    } else {
+      boot();
+    }
+  })();
+  </script>
+
+  <script>
+  // ponytail: injected until source is available — adds monthly/daily income + EUR toggle
+  (function(){
+    'use strict';
+    var eurRate = null;
+    var displayEur = false;
+    var yearlyUsd = 0;
+
+    fetch('https://api.frankfurter.app/latest?from=USD&to=EUR')
+      .then(function(r){return r.json();})
+      .then(function(d){eurRate=d.rates.EUR;updateDisplay();})
+      .catch(function(){eurRate=0.92;});
+
+    function parseUsd(s){return parseFloat(s.replace(/[^0-9.]/g,''))||0;}
+    function fmtUsd(n){return '$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+    function fmtEur(n){return '€'+(n*(eurRate||0.92)).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});}
+    function fmt(n){return displayEur?fmtEur(n):fmtUsd(n);}
+
+    function injectRows(){
+      var incomeBlock=document.querySelector('.income-block');
+      if(!incomeBlock||incomeBlock.querySelector('.pm-injected'))return;
+      var incomeVal=incomeBlock.querySelector('.income-val');
+      if(!incomeVal||!incomeVal.textContent.includes('$'))return;
+      yearlyUsd=parseUsd(incomeVal.textContent);
+      if(!yearlyUsd)return;
+
+      var cls='sum-block pm-injected';
+      var labelCls=incomeBlock.querySelector('.sum-label').className;
+      var valCls=incomeBlock.querySelector('.sum-val,.big-val')
+        ? (incomeBlock.querySelector('.sum-val')||incomeBlock.querySelector('.big-val')).className
+        : 'sum-val';
+
+      var monthly=document.createElement('div');
+      monthly.className=cls;
+      monthly.innerHTML='<div class="'+labelCls+'">EST. MONTHLY INCOME</div>'+
+        '<div class="'+valCls+' pm-monthly"></div>';
+
+      var daily=document.createElement('div');
+      daily.className=cls;
+      daily.innerHTML='<div class="'+labelCls+'">EST. DAILY INCOME</div>'+
+        '<div class="'+valCls+' pm-daily"></div>';
+
+      var toggleWrap=document.createElement('div');
+      toggleWrap.className=cls;
+      toggleWrap.style.marginTop='8px';
+      var btn=document.createElement('button');
+      btn.className='xp-btn pm-eur-btn';
+      btn.style.cssText='font-size:11px;padding:3px 10px;';
+      btn.textContent='[ Switch to EUR ]';
+      btn.addEventListener('click',function(){
+        displayEur=!displayEur;
+        btn.textContent=displayEur?'[ Switch to USD ]':'[ Switch to EUR ]';
+        updateDisplay();
+      });
+      toggleWrap.appendChild(btn);
+
+      incomeBlock.after(monthly,daily,toggleWrap);
+      updateDisplay();
+    }
+
+    function updateDisplay(){
+      var m=document.querySelector('.pm-monthly');
+      var d=document.querySelector('.pm-daily');
+      if(m&&yearlyUsd)m.textContent=fmt(yearlyUsd/12);
+      if(d&&yearlyUsd)d.textContent=fmt(yearlyUsd/365);
+    }
+
+    new MutationObserver(function(){
+      var iv=document.querySelector('.income-val');
+      if(iv&&iv.textContent.includes('$')){
+        var y=parseUsd(iv.textContent);
+        if(y&&y!==yearlyUsd){yearlyUsd=y;updateDisplay();}
+      }
+      injectRows();
+    }).observe(document.documentElement,{childList:true,subtree:true,characterData:true});
+  })();
+  </script>
+  </body>
+</html>

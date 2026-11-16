@@ -3,6 +3,7 @@
 Numia API Client
 Handles authentication and requests to Numia API for price and APR data
 """
+import asyncio
 import aiohttp
 import logging
 import os
@@ -55,7 +56,7 @@ class NumiaAPIClient:
         """
         self.api_key = api_key or os.getenv('NUMIA_API_KEY')
         if self.api_key:
-            logger.info(f"Numia API client initialized with key: {self.api_key[:8]}...")
+            logger.info("Numia API client initialized with configured credentials")
         else:
             logger.warning("No API key provided - will use fallback data")
 
@@ -123,6 +124,47 @@ class NumiaAPIClient:
 
         return prices
 
+    async def get_coingecko_prices(self, symbols: List[str]) -> Dict[str, float]:
+        """
+        Fetch prices from CoinGecko for tokens with a coingecko_id in config.
+
+        Args:
+            symbols: Token symbols to look up
+
+        Returns:
+            Dict mapping symbol to price in USD
+        """
+        # Build map of coingecko_id -> symbol for requested tokens
+        id_to_symbol = {}
+        for symbol in symbols:
+            tc = config.get_token_config(symbol.upper())
+            if tc and tc.get('coingecko_id'):
+                id_to_symbol[tc['coingecko_id']] = symbol.upper()
+
+        if not id_to_symbol:
+            return {}
+
+        ids_param = ','.join(id_to_symbol.keys())
+        url = f"https://api.coingecko.com/api/v3/simple/price?ids={ids_param}&vs_currencies=usd"
+
+        prices = {}
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        for cg_id, symbol in id_to_symbol.items():
+                            if cg_id in data and 'usd' in data[cg_id]:
+                                price = float(data[cg_id]['usd'])
+                                prices[symbol] = price
+                                logger.info(f"  ✅ {symbol}: ${price:.4f} (CoinGecko)")
+                    else:
+                        logger.warning(f"CoinGecko API error {response.status}")
+        except Exception as e:
+            logger.warning(f"CoinGecko price fetch failed: {e}")
+
+        return prices
+
     async def get_staking_apr(self) -> Optional[float]:
         """
         Get Osmosis staking APR
@@ -177,7 +219,10 @@ class NumiaAPIClient:
 
     async def get_token_prices(self, symbols: List[str]) -> Dict[str, TokenPrice]:
         """
-        Get prices for multiple tokens
+        Get prices for multiple tokens.
+        - Osmosis primary for most tokens
+        - CoinGecko fetched in parallel for tokens with coingecko_id (e.g. DYM, SAGA)
+        - Osmosis price takes priority when both return a value
 
         Args:
             symbols: List of token symbols (e.g., ['ATOM', 'OSMO', 'TIA'])
@@ -187,9 +232,31 @@ class NumiaAPIClient:
         """
         token_prices = {}
 
-        # Fetch prices from Osmosis using symbols
         if symbols:
-            prices = await self.get_osmosis_prices(symbols)
+            # Tokens with coingecko_id are fetched from CoinGecko in parallel
+            coingecko_symbols = [
+                s for s in symbols
+                if (config.get_token_config(s.upper()) or {}).get('coingecko_id')
+            ]
+
+            # Fetch Osmosis and CoinGecko concurrently
+            tasks = [self.get_osmosis_prices(symbols)]
+            if coingecko_symbols:
+                tasks.append(self.get_coingecko_prices(coingecko_symbols))
+
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+
+            osmosis_prices = results[0] if not isinstance(results[0], Exception) else {}
+            cg_prices = results[1] if len(results) > 1 and not isinstance(results[1], Exception) else {}
+
+            # CoinGecko as base, Osmosis overrides (Osmosis is more accurate for DEX)
+            prices = {**cg_prices, **osmosis_prices}
+
+            # Final CoinGecko pass for any still-missing tokens
+            still_missing = [s for s in symbols if s.upper() not in prices]
+            if still_missing:
+                extra_cg = await self.get_coingecko_prices(still_missing)
+                prices.update(extra_cg)
 
             for symbol, price in prices.items():
                 denom = self.token_denoms.get(symbol)
@@ -200,7 +267,7 @@ class NumiaAPIClient:
                     last_updated=datetime.now(timezone.utc)
                 )
 
-        # Log tokens without prices
+        # Log tokens still without prices
         for symbol in symbols:
             if symbol.upper() not in token_prices:
                 logger.warning(f"  {symbol}: No price data available")
@@ -234,54 +301,59 @@ class NumiaAPIClient:
                     # This NEVER fails - always returns values (fresh/stale/fallback)
                     scraped_aprs = await scraper.get_multiple_aprs(symbols)
 
-                # Convert to expected format
                 for symbol, apr_value in scraped_aprs.items():
                     symbol_upper = symbol.upper()
-
-                    # Check if this token has skip_apr_scraping enabled
                     token_config = self.apr_config.get(symbol_upper, {})
-                    skip_scraping = config.get_token_config(symbol_upper).get('skip_apr_scraping', False) if config.get_token_config(symbol_upper) else False
 
-                    if apr_value == 0 and not skip_scraping:
-                        # Scraping failed, no cache available, and NOT a skip_scraping token
+                    # Check if this token is explicitly configured to skip scraping
+                    tc = config.get_token_config(symbol_upper)
+                    skip_scraping = tc.get('skip_apr_scraping', False) if tc else False
+
+                    if apr_value > 0:
                         aprs[symbol_upper] = {
-                            'apr': 0.0,
-                            'status': 'error',
-                            'source': 'unavailable'
+                            'apr': apr_value,
+                            'status': 'ok',
+                            'source': 'chain_api'
                         }
-                    elif apr_value == 0 and skip_scraping:
-                        # This token skips scraping, use config fallback
-                        fallback_apr = token_config.get('fallback_apr', 10.0)
+                    elif skip_scraping:
+                        # Explicitly configured (e.g. HUAHUA 0%)
                         aprs[symbol_upper] = {
-                            'apr': fallback_apr,
+                            'apr': apr_value,
                             'status': 'ok',
                             'source': 'config'
                         }
                     else:
-                        # Scraped or cached value
-                        aprs[symbol_upper] = {
-                            'apr': apr_value,
-                            'status': 'ok',
-                            'source': 'keplr'
-                        }
+                        fallback_apr = token_config.get('fallback_apr', 0.0)
+                        if fallback_apr > 0:
+                            aprs[symbol_upper] = {
+                                'apr': fallback_apr,
+                                'status': 'ok',
+                                'source': 'config'
+                            }
+                        else:
+                            aprs[symbol_upper] = {
+                                'apr': 0.0,
+                                'status': 'error',
+                                'source': 'unavailable'
+                            }
 
             except Exception as e:
                 logger.error(f"APR scraper failed: {e}, using config fallbacks")
                 # Fall through to config-only mode
 
-        # Fallback: If scraper disabled or failed catastrophically, return 0
         if not use_scraper or not aprs:
-            logger.error("APR scraper disabled or failed, returning 0 for all tokens")
+            logger.warning("APR fetcher disabled or failed, using config fallbacks")
             for symbol in symbols:
                 symbol_upper = symbol.upper()
-
                 if symbol_upper in aprs:
                     continue
 
+                token_config = self.apr_config.get(symbol_upper, {})
+                fallback_apr = token_config.get('fallback_apr', 0.0)
                 aprs[symbol_upper] = {
-                    'apr': 0.0,
-                    'status': 'error',
-                    'source': 'scraper_disabled'
+                    'apr': fallback_apr,
+                    'status': 'ok' if fallback_apr > 0 else 'error',
+                    'source': 'config' if fallback_apr > 0 else 'unavailable'
                 }
 
         return aprs
